@@ -3,7 +3,9 @@ import { GeistSans } from "geist/font/sans";
 import { AppProvider } from "@/components/shared/app-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "LifeOS — Your personal space", template: "%s · LifeOS" },
   description:
     "A calm personal space for your tasks, goals, creative growth, and everyday essentials.",

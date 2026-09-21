@@ -29,6 +29,7 @@ npm start
 - Calendar: month navigation, selectable days, and events drawn from the current task, goal, and subscription state.
 - Settings: display name, light/dark/system appearance, currency, week start, and a future reminder preference. Creator connections are explicitly unavailable.
 - Global quick add: keyboard-accessible dialog on desktop and bottom sheet on mobile. Secondary mobile routes are accessible from the quick-add menu.
+- Public legal pages: responsive Privacy Policy and Terms of Service pages with canonical production URLs, shared contact details, theme controls, and links from the dashboard footer.
 
 ## Project structure
 
@@ -43,10 +44,12 @@ src/components/subscriptions/  Grid, tiles, responsive list, and page
 src/components/inbox/          Reusable notification rows and page
 src/components/calendar/       Basic month calendar and daily agenda
 src/components/settings/       Local preferences
+src/components/legal/          Reusable public legal-document presentation
 src/components/shared/         Typed state provider, dialogs, empty states, skeletons
 src/lib/types.ts               Shared domain models
 src/lib/mock-data.ts           Centralized typed demo data and fixed demo clock
 src/lib/subscription-utils.ts  Billing normalization and currency-specific totals
+src/lib/site.ts                Production URL, support contact, and legal date
 src/app/globals.css            Palette variables, visual system, responsive rules
 tests/                        Calculation and browser interaction checks
 artifacts/                    Desktop/mobile preview screenshots
@@ -78,7 +81,7 @@ npm run test:browser
 node scripts/capture-preview.mjs
 ```
 
-The browser suite covers all eight routes at 1440, 1024, 820, 768, 390, and 360 pixels, plus task completion, quick add, goal updates, custom subscription billing, currency isolation, chart periods, calendar navigation, settings, inbox actions, and mobile navigation. Screenshots are saved in `artifacts/`.
+The browser suite covers all ten routes at 1440, 1024, 820, 768, 390, and 360 pixels, plus task completion, quick add, goal updates, custom subscription billing, currency isolation, chart periods, calendar navigation, settings, inbox actions, mobile navigation, and public legal-page behavior. Screenshots are saved in `artifacts/`.
 
 Dialogs trap focus, close with Escape, and restore focus. Tabs use keyboard-accessible Radix primitives; task controls use native checkboxes. A skip link, visible focus states, live announcements, semantic headings, and reduced-motion styles are included.
 

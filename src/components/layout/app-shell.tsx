@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useApp } from "@/components/shared/app-provider";
 import { QuickAdd } from "@/components/shared/quick-add";
+import { PublicSiteShell } from "@/components/layout/public-site-shell";
 import type { ReactNode } from "react";
 const navigation = [
   { href: "/", label: "Dashboard", mobile: "Home", icon: LayoutGrid },
@@ -38,6 +39,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { inbox, setAddKind, preferences } = useApp();
   const unread = inbox.filter((item) => !item.read).length;
+  if (path === "/privacy" || path === "/terms") {
+    return <PublicSiteShell>{children}</PublicSiteShell>;
+  }
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -140,6 +144,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
           <footer className="page-footer">
             <span>Life, a little more in focus.</span>
+            <nav aria-label="Legal links">
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+            </nav>
             <span>
               LifeOS <span className="footer-dot">·</span> Made for your
               everyday

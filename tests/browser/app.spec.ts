@@ -8,6 +8,8 @@ const routes = [
   "/inbox",
   "/calendar",
   "/settings",
+  "/privacy",
+  "/terms",
 ];
 test("every route renders without errors and fits desktop, tablet, and mobile widths", async ({
   page,
@@ -198,4 +200,40 @@ test("mobile navigation opens sheets and exposes secondary routes", async ({
   await expect(
     page.getByRole("heading", { name: "Your subscriptions." }),
   ).toBeVisible();
+});
+
+test("legal pages are public, linked, themed, and use the configured support address", async ({
+  page,
+}) => {
+  for (const route of ["/privacy", "/terms"]) {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator(".sidebar")).not.toBeVisible();
+    await expect(page.locator(".public-header")).toBeVisible();
+    await expect(
+      page.getByRole("link", {
+        name: "brightified2004@gmail.com",
+        exact: true,
+      }),
+    ).toHaveAttribute("href", "mailto:brightified2004@gmail.com");
+    await expect(
+      page.getByText("Last updated: September 21, 2026"),
+    ).toBeVisible();
+  }
+
+  await page.getByRole("link", { name: "Privacy", exact: true }).click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await page.getByRole("button", { name: "Use dark appearance" }).click();
+  await expect(page.locator('[data-theme="dark"]').first()).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Use light appearance" }),
+  ).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/terms");
+  await expect(page.locator(".public-header")).toBeVisible();
+  await expect(page.locator(".mobile-nav")).not.toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
 });

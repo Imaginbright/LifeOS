@@ -17,6 +17,10 @@ for (const [name, route, width, height] of [
   ["settings-desktop", "/settings", 1440, 1100],
   ["settings-mobile", "/settings", 390, 844],
   ["dashboard-tablet", "/", 820, 1100],
+  ["privacy-desktop", "/privacy", 1440, 1100],
+  ["privacy-mobile", "/privacy", 390, 844],
+  ["terms-desktop", "/terms", 1440, 1100],
+  ["terms-mobile", "/terms", 390, 844],
 ]) {
   await page.setViewportSize({ width, height });
   await page.goto(`http://127.0.0.1:3000${route}`);
