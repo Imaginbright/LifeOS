@@ -460,7 +460,10 @@ h1 {
     transform 0.2s,
     box-shadow 0.2s;
 }
-.social-card:hover {
+a.social-card {
+  cursor: pointer;
+}
+a.social-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
@@ -3322,6 +3325,102 @@ textarea {
   font-size: 11px;
   white-space: nowrap;
 }
+.public-header-cta {
+  min-height: 38px;
+  padding: 0 14px;
+}
+.landing-page {
+  display: grid;
+  gap: 90px;
+}
+.landing-hero {
+  max-width: 740px;
+  padding: 24px 0 0;
+}
+.landing-hero .eyebrow {
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+.landing-hero h1 {
+  font-size: clamp(44px, 6vw, 72px);
+  line-height: 1.03;
+  letter-spacing: -3px;
+}
+.landing-lead {
+  max-width: 630px;
+  margin-top: 28px;
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.55;
+}
+.landing-support {
+  max-width: 565px;
+  margin-top: 13px;
+  color: var(--muted-foreground);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.landing-cta {
+  margin-top: 29px;
+  min-height: 46px;
+}
+.landing-section-heading .eyebrow { margin-bottom: 9px; }
+.landing-section-heading h2 { font-size: 25px; letter-spacing: -0.7px; }
+.landing-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.landing-feature {
+  min-height: 210px;
+  padding: 23px;
+}
+.landing-feature h3 {
+  margin-top: 24px;
+  font-size: 16px;
+}
+.landing-feature p {
+  margin-top: 10px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.monthly-archive { margin-top: 24px; }
+.goal-card-actions { display: flex; align-items: center; gap: 8px; }
+.entity-actions-trigger { width: 44px; height: 44px; color: var(--muted-foreground); }
+.task-row .entity-actions-trigger { margin-left: 3px; }
+@media (hover: hover) and (min-width: 761px) {
+  .task-row .entity-actions-trigger { opacity: 0.55; }
+  .task-row:hover .entity-actions-trigger, .task-row:focus-within .entity-actions-trigger { opacity: 1; }
+}
+.entity-menu {
+  z-index: 60;
+  min-width: 150px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+.entity-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  outline: 0;
+  cursor: pointer;
+}
+.entity-menu-item[data-highlighted] { background: var(--muted); }
+.destructive-text { color: var(--destructive); }
+.destructive-button { background: var(--destructive); color: var(--destructive-foreground); }
+.destructive-button:hover { filter: brightness(0.94); }
+.confirm-content { width: min(420px, calc(100% - 32px)); }
+.confirm-content h2 { margin-top: 0; }
+.confirm-content .form-actions { margin-top: 20px; }
 .dark .public-site-shell {
   background:
     radial-gradient(ellipse 620px 430px at 4% 0%, #4440552e, transparent),
@@ -3330,6 +3429,7 @@ textarea {
 }
 
 @media (max-width: 900px) {
+  .landing-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .legal-layout {
     grid-template-columns: 170px minmax(0, 1fr);
     gap: 28px;
@@ -3348,6 +3448,13 @@ textarea {
 }
 
 @media (max-width: 700px) {
+  .landing-page { gap: 62px; }
+  .landing-hero { padding-top: 5px; }
+  .landing-hero h1 { font-size: clamp(41px, 11vw, 54px); letter-spacing: -2px; }
+  .landing-feature-grid { gap: 12px; }
+  .landing-feature { min-height: 190px; padding: 18px; }
+  .landing-feature h3 { margin-top: 19px; }
+  .public-header-cta { padding: 0 9px; font-size: 11px; }
   .public-header {
     padding: 15px 20px;
   }
@@ -3358,7 +3465,7 @@ textarea {
     display: none;
   }
   .public-header > nav {
-    gap: 14px;
+    gap: 10px;
   }
   .public-header > nav a {
     font-size: 12px;
@@ -3423,6 +3530,10 @@ textarea {
     gap: 15px;
     margin: 28px 0;
   }
+}
+@media (max-width: 450px) {
+  .landing-feature-grid { grid-template-columns: 1fr; }
+  .landing-feature { min-height: 0; }
 }
 @media (max-width: 370px) {
   .main-content {

@@ -19,7 +19,7 @@ export default async function LoginPage({
         <p className="section-subtitle">Sign in to return to your personal space.</p>
         {params.error && <p className="form-error" role="alert">{params.error}</p>}
         <form action={signIn} className="entry-form login-form">
-          <input type="hidden" name="next" value={params.next ?? "/"} />
+          <input type="hidden" name="next" value={params.next ?? "/dashboard"} />
           <label>Email<input name="email" type="email" autoComplete="email" required /></label>
           <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
           <button className="button primary" type="submit">Sign in</button>

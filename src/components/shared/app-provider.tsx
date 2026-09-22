@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, us
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import type { AppData, Goal, Preferences, Subscription, Task } from "@/lib/types";
+import { removeEntity, replaceEntity } from "@/lib/entity-state";
 
 export type AddKind = "menu" | "task" | "goal" | "subscription" | null;
 const defaults: AppData = {
@@ -28,7 +29,7 @@ function useAppState() {
   const themeReady = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const appearance = isAppearance(theme) ? theme : defaults.preferences.appearance;
   const resolvedAppearance = resolvedTheme === "dark" ? "dark" : "light";
-  const publicPage = ["/login", "/privacy", "/terms"].includes(path);
+  const publicPage = ["/", "/login", "/privacy", "/terms"].includes(path);
   const [data, setData] = useState<AppData>(defaults);
   const [loading, setLoading] = useState(!publicPage);
   const [error, setError] = useState("");
@@ -36,6 +37,7 @@ function useAppState() {
   const [socialPending, setSocialPending] = useState<string | null>(null);
   const [addKind, setAddKind] = useState<AddKind>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const loaded = useRef(false);
   const preferencesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,8 +116,17 @@ function useAppState() {
     finally { setPending(false); }
   }
 
+  async function refreshInbox() {
+    try {
+      const inbox = await api<AppData["inbox"]>("/api/inbox", { cache: "no-store" });
+      setData((current) => ({ ...current, inbox }));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Notifications could not be updated");
+    }
+  }
+
   return {
-    ...data, appearance, resolvedAppearance, themeReady, setAppearance, loading, error, pending, socialPending, refresh, addKind, setAddKind, editingGoal, setEditingGoal, setPreferences, announcement,
+    ...data, appearance, resolvedAppearance, themeReady, setAppearance, loading, error, pending, socialPending, refresh, addKind, setAddKind, editingGoal, setEditingGoal, editingTask, setEditingTask, setPreferences, announcement,
     clearError: () => setError(""),
     toggleTask: async (id: string) => {
       const previous = data.tasks;
@@ -123,19 +134,45 @@ function useAppState() {
       setData((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === id ? { ...item, completed: !item.completed } : item) }));
       const saved = await mutate(() => api<Task>(`/api/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ completed: !task.completed }) }), "Task updated");
       if (!saved) setData((current) => ({ ...current, tasks: previous }));
+      else void refreshInbox();
     },
     addTask: (task: Omit<Task, "id">) => mutate(async () => {
       const saved = await api<Task>("/api/tasks", { method: "POST", body: JSON.stringify(task) });
       setData((current) => ({ ...current, tasks: [...current.tasks, saved] })); return saved;
     }, "Task added"),
+    editTask: (id: string, changes: Omit<Task, "id" | "completed">) => mutate(async () => {
+      const saved = await api<Task>(`/api/tasks/${id}`, { method: "PATCH", body: JSON.stringify(changes) });
+      setData((current) => ({ ...current, tasks: replaceEntity(current.tasks, saved) }));
+      void refreshInbox();
+      return saved;
+    }, "Task saved"),
+    deleteTask: (id: string) => mutate(async () => {
+      await api(`/api/tasks/${id}`, { method: "DELETE" });
+      setData((current) => ({ ...current, tasks: removeEntity(current.tasks, id) }));
+      void refreshInbox();
+      return { ok: true };
+    }, "Task deleted"),
     addGoal: (goal: Omit<Goal, "id">) => mutate(async () => {
       const saved = await api<Goal>("/api/goals", { method: "POST", body: JSON.stringify(goal) });
       setData((current) => ({ ...current, goals: [...current.goals, saved] })); return saved;
     }, "Goal added"),
     updateGoal: (id: string, currentValue: number) => mutate(async () => {
       const saved = await api<Goal>(`/api/goals/${id}`, { method: "PATCH", body: JSON.stringify({ currentValue }) });
-      setData((current) => ({ ...current, goals: current.goals.map((item) => item.id === id ? saved : item) })); return saved;
+      void refreshInbox();
+      setData((current) => ({ ...current, goals: replaceEntity(current.goals, saved) })); return saved;
     }, "Goal progress updated"),
+    editGoal: (id: string, changes: Omit<Goal, "id">) => mutate(async () => {
+      const saved = await api<Goal>(`/api/goals/${id}`, { method: "PATCH", body: JSON.stringify(changes) });
+      setData((current) => ({ ...current, goals: replaceEntity(current.goals, saved) }));
+      void refreshInbox();
+      return saved;
+    }, "Goal saved"),
+    deleteGoal: (id: string) => mutate(async () => {
+      await api(`/api/goals/${id}`, { method: "DELETE" });
+      setData((current) => ({ ...current, goals: removeEntity(current.goals, id) }));
+      void refreshInbox();
+      return { ok: true };
+    }, "Goal deleted"),
     addSubscription: (subscription: Omit<Subscription, "id">) => mutate(async () => {
       const saved = await api<Subscription>("/api/subscriptions", { method: "POST", body: JSON.stringify(subscription) });
       setData((current) => ({ ...current, subscriptions: [...current.subscriptions, saved] })); return saved;

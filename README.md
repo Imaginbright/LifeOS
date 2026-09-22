@@ -30,9 +30,9 @@ The checked-in database types are generated from the linked schema. Do not edit 
 
 ## Authentication and routes
 
-`/login`, `/privacy`, and `/terms` are public. The Next.js 16 `proxy.ts` session layer protects the dashboard and refreshes Supabase auth cookies. Every mutation route also validates the user and relies on RLS or explicit server-side ownership checks.
+`/`, `/login`, `/privacy`, and `/terms` are public. The landing page explains LifeOS to visitors; signed-in visitors see an Open dashboard link. Sign-in sends the owner to `/dashboard`. The Next.js 16 `proxy.ts` session layer protects `/dashboard` and the other personal routes and refreshes Supabase auth cookies. Every mutation route also validates the user and relies on RLS and explicit server-side ownership checks.
 
-Profile preferences, task completion, quick additions, goal check-ins, subscription entries, and inbox read/dismiss state are persisted. The internal inbox is generated from real overdue tasks, approaching goal deadlines, upcoming subscription renewals, provider connection errors, and audience milestones. Deterministic event keys prevent duplicate notifications.
+Profile preferences, task creation/editing/deletion/completion, goal creation/editing/deletion/check-ins, subscription entries, and inbox read/dismiss state are persisted. The internal inbox is generated from real overdue tasks, approaching goal deadlines, upcoming subscription renewals, provider connection errors, and audience milestones. Deterministic event keys prevent duplicate notifications; task and goal changes reconcile affected reminders without reloading the full workspace.
 
 ## Creator connections
 

@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useApp } from "@/components/shared/app-provider";
 import { SUPPORT_EMAIL } from "@/lib/site";
 
-export function PublicSiteShell({ children }: { children: ReactNode }) {
+export function PublicSiteShell({ children, landingAction }: { children: ReactNode; landingAction?: "login" | "dashboard" }) {
   const { resolvedAppearance, setAppearance, themeReady } = useApp();
   const dark = resolvedAppearance === "dark";
 
@@ -34,6 +34,7 @@ export function PublicSiteShell({ children }: { children: ReactNode }) {
           >
             {themeReady ? (dark ? <Sun size={18} /> : <Moon size={18} />) : <span className="theme-icon-placeholder" />}
           </button>
+          {landingAction && <Link className="button secondary public-header-cta" href={landingAction === "dashboard" ? "/dashboard" : "/login"}>{landingAction === "dashboard" ? "Open dashboard" : "Sign in"}</Link>}
         </nav>
       </header>
 

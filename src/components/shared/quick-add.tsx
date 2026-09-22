@@ -20,14 +20,17 @@ export function QuickAdd() {
   const app = useApp();
   const returnFocus = useRef<HTMLElement | null>(null);
   const [cycle, setCycle] = useState<Subscription["billingCycle"]>("monthly");
-  const open = app.addKind !== null || app.editingGoal !== null;
+  const open = app.addKind !== null || app.editingGoal !== null || app.editingTask !== null;
   const close = () => {
     app.setAddKind(null);
     app.setEditingGoal(null);
+    app.setEditingTask(null);
     setCycle("monthly");
   };
   const title = app.editingGoal
-    ? "A little progress adds up."
+    ? "Edit your goal."
+    : app.editingTask
+      ? "Edit your task."
     : app.addKind === "menu"
       ? "Make a little room."
       : app.addKind === "task"
@@ -37,23 +40,25 @@ export function QuickAdd() {
           : "Keep track of the little things.";
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (app.pending) return;
     const data = new FormData(event.currentTarget);
     const str = (key: string) => String(data.get(key) ?? "");
     const num = (key: string) => Number(data.get(key));
     let saved;
-    if (app.editingGoal)
-      saved = await app.updateGoal(app.editingGoal.id, num("currentValue"));
-    else if (app.addKind === "task")
-      saved = await app.addTask({
+    if (app.editingTask || app.addKind === "task") {
+      const task = {
         title: str("title").trim(),
+        notes: str("notes").trim(),
         date: str("date"),
         category: str("category") as Category,
         priority: str("priority") as Task["priority"],
         scope: str("scope") as Task["scope"],
-        completed: false,
-      });
-    else if (app.addKind === "goal")
-      saved = await app.addGoal({
+      };
+      saved = app.editingTask
+        ? await app.editTask(app.editingTask.id, task)
+        : await app.addTask({ ...task, completed: false });
+    } else if (app.editingGoal || app.addKind === "goal") {
+      const goal = {
         title: str("title").trim(),
         description: str("description").trim(),
         currentValue: num("currentValue"),
@@ -61,8 +66,11 @@ export function QuickAdd() {
         unit: str("unit").trim(),
         category: str("category"),
         deadline: str("deadline"),
-      });
-    else
+      };
+      saved = app.editingGoal
+        ? await app.editGoal(app.editingGoal.id, goal)
+        : await app.addGoal(goal);
+    } else
       saved = await app.addSubscription({
         name: str("name").trim(),
         amount: num("amount"),
@@ -107,8 +115,8 @@ export function QuickAdd() {
             <X size={20} />
           </Dialog.Close>
           <p className="eyebrow">
-            {app.editingGoal
-              ? "Update goal"
+            {app.editingGoal || app.editingTask
+              ? `Edit ${app.editingGoal ? "goal" : "task"}`
               : app.addKind === "menu"
                 ? "Quick add"
                 : `Add ${app.addKind}`}
@@ -180,40 +188,26 @@ export function QuickAdd() {
             </>
           ) : (
             <form
-              key={app.addKind ?? app.editingGoal?.id}
+              key={app.editingTask?.id ?? app.editingGoal?.id ?? app.addKind}
               onSubmit={submit}
               className="entry-form"
             >
-              {app.editingGoal ? (
-                <>
-                  <p className="editing-title">{app.editingGoal.title}</p>
-                  <label>
-                    Current progress{" "}
-                    <input
-                      name="currentValue"
-                      type="number"
-                      min="0"
-                      step="any"
-                      defaultValue={app.editingGoal.currentValue}
-                      required
-                    />
-                  </label>
-                  <p className="muted">
-                    Target: {app.editingGoal.targetValue.toLocaleString()}{" "}
-                    {app.editingGoal.unit}
-                  </p>
-                </>
-              ) : app.addKind === "task" ? (
+              {app.editingTask || app.addKind === "task" ? (
                 <>
                   <label>
                     Task title
                     <input
                       name="title"
                       placeholder="What would you like to get done?"
+                      defaultValue={app.editingTask?.title}
                       required
                       maxLength={120}
                       pattern=".*\S.*"
                     />
+                  </label>
+                  <label>
+                    Notes
+                    <textarea name="notes" maxLength={1000} defaultValue={app.editingTask?.notes ?? ""} placeholder="Any details to remember?" />
                   </label>
                   <div className="form-grid">
                     <label>
@@ -221,20 +215,20 @@ export function QuickAdd() {
                       <input
                         name="date"
                         type="date"
-                        defaultValue={todayDate()}
+                        defaultValue={app.editingTask?.date ?? todayDate()}
                         required
                       />
                     </label>
                     <label>
                       Plan
-                      <select name="scope">
+                      <select name="scope" defaultValue={app.editingTask?.scope ?? "daily"}>
                         <option value="daily">Daily task</option>
                         <option value="monthly">Monthly task</option>
                       </select>
                     </label>
                     <label>
                       Priority
-                      <select name="priority" defaultValue="Medium">
+                      <select name="priority" defaultValue={app.editingTask?.priority ?? "Medium"}>
                         <option>Low</option>
                         <option>Medium</option>
                         <option>High</option>
@@ -242,7 +236,7 @@ export function QuickAdd() {
                     </label>
                     <label>
                       Category
-                      <select name="category">
+                      <select name="category" defaultValue={app.editingTask?.category ?? "Content"}>
                         {[
                           "Content",
                           "Development",
@@ -257,13 +251,14 @@ export function QuickAdd() {
                     </label>
                   </div>
                 </>
-              ) : app.addKind === "goal" ? (
+              ) : app.editingGoal || app.addKind === "goal" ? (
                 <>
                   <label>
                     Goal title
                     <input
                       name="title"
                       placeholder="What are you working toward?"
+                      defaultValue={app.editingGoal?.title}
                       required
                       maxLength={100}
                       pattern=".*\S.*"
@@ -274,6 +269,7 @@ export function QuickAdd() {
                     <textarea
                       name="description"
                       placeholder="Why does this matter to you?"
+                      defaultValue={app.editingGoal?.description}
                       maxLength={250}
                     />
                   </label>
@@ -283,7 +279,7 @@ export function QuickAdd() {
                       <input
                         name="currentValue"
                         type="number"
-                        defaultValue="0"
+                        defaultValue={app.editingGoal?.currentValue ?? 0}
                         min="0"
                         step="any"
                         required
@@ -295,6 +291,7 @@ export function QuickAdd() {
                         name="targetValue"
                         type="number"
                         min="0.01"
+                        defaultValue={app.editingGoal?.targetValue}
                         step="any"
                         required
                       />
@@ -304,6 +301,7 @@ export function QuickAdd() {
                       <input
                         name="unit"
                         placeholder="books, subscribers, %…"
+                        defaultValue={app.editingGoal?.unit}
                         required
                       />
                     </label>
@@ -312,14 +310,14 @@ export function QuickAdd() {
                       <input
                         name="deadline"
                         type="date"
-                        defaultValue={format(addMonths(new Date(), 3), "yyyy-MM-dd")}
+                        defaultValue={app.editingGoal?.deadline ?? format(addMonths(new Date(), 3), "yyyy-MM-dd")}
                         required
                       />
                     </label>
                   </div>
                   <label>
                     Category
-                    <select name="category">
+                    <select name="category" defaultValue={app.editingGoal?.category ?? "Personal"}>
                       <option>Personal</option>
                       <option>Creator</option>
                       <option>Development</option>
@@ -423,14 +421,16 @@ export function QuickAdd() {
                   type="button"
                   className="button secondary"
                   onClick={close}
+                  disabled={app.pending}
                 >
                   Cancel
                 </button>
                 <button type="submit" className="button primary" disabled={app.pending}>
-                  {app.pending ? "Saving…" : app.editingGoal ? "Save progress" : `Add ${app.addKind}`}
+                  {app.pending ? "Saving…" : app.editingGoal ? "Save goal" : app.editingTask ? "Save task" : `Add ${app.addKind}`}
                   <ArrowRight size={16} />
                 </button>
               </div>
+              {app.error && <p className="form-error" role="alert">{app.error}</p>}
             </form>
           )}
         </Dialog.Content>

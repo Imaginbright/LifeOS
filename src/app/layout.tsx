@@ -13,38 +13,36 @@ export const metadata: Metadata = {
   description:
     "A calm personal space for your tasks, goals, creative growth, and everyday essentials.",
 };
-async function defaultAppearance(): Promise<Preferences["appearance"]> {
+async function initialSession(): Promise<{ appearance: Preferences["appearance"]; signedIn: boolean }> {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return "light";
+    if (!user) return { appearance: "light", signedIn: false };
 
     const { data } = await supabase
       .from("profiles")
       .select("appearance")
       .eq("id", user.id)
       .maybeSingle();
-    return data?.appearance === "dark" || data?.appearance === "system"
-      ? data.appearance
-      : "light";
+    return { appearance: data?.appearance === "dark" || data?.appearance === "system" ? data.appearance : "light", signedIn: true };
   } catch {
-    return "light";
+    return { appearance: "light", signedIn: false };
   }
 }
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const appearance = await defaultAppearance();
+  const { appearance, signedIn } = await initialSession();
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={GeistSans.variable}>
         <ThemeProvider defaultTheme={appearance}>
           <AppProvider>
-            <AppShell>{children}</AppShell>
+            <AppShell signedIn={signedIn}>{children}</AppShell>
           </AppProvider>
         </ThemeProvider>
       </body>

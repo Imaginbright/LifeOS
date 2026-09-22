@@ -22,7 +22,7 @@ import { QuickAdd } from "@/components/shared/quick-add";
 import { PublicSiteShell } from "@/components/layout/public-site-shell";
 import type { ReactNode } from "react";
 const navigation = [
-  { href: "/", label: "Dashboard", mobile: "Home", icon: LayoutGrid },
+  { href: "/dashboard", label: "Dashboard", mobile: "Home", icon: LayoutGrid },
   { href: "/tasks", label: "Tasks", mobile: "Tasks", icon: CheckCheck },
   { href: "/goals", label: "Goals", mobile: "Goals", icon: Flag },
   {
@@ -35,12 +35,12 @@ const navigation = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, signedIn }: { children: ReactNode; signedIn: boolean }) {
   const path = usePathname();
   const { inbox, setAddKind, preferences, error, clearError, refresh, loading } = useApp();
   const unread = inbox.filter((item) => !item.read).length;
-  if (path === "/privacy" || path === "/terms") {
-    return <PublicSiteShell>{children}</PublicSiteShell>;
+  if (path === "/" || path === "/privacy" || path === "/terms") {
+    return <PublicSiteShell landingAction={path === "/" ? signedIn ? "dashboard" : "login" : undefined}>{children}</PublicSiteShell>;
   }
   if (path === "/login") return <>{children}</>;
   return (
@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <aside className="sidebar">
-        <Link href="/" className="wordmark">
+        <Link href="/dashboard" className="wordmark">
           <span className="brand-mark">
             <Leaf size={21} />
           </span>
@@ -110,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 "Settings"}
             </strong>
           </div>
-          <Link href="/" className="mobile-wordmark">
+          <Link href="/dashboard" className="mobile-wordmark">
             LifeOS.
           </Link>
           <div className="top-actions">

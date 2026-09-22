@@ -4,6 +4,7 @@ import { useApp } from "@/components/shared/app-provider";
 import { EmptyState, Progress } from "@/components/shared/primitives";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
+import { EntityActions } from "@/components/shared/entity-actions";
 export function TaskProgress({ tasks }: { tasks: Task[] }) {
   const completed = tasks.filter((task) => task.completed).length;
   const value = tasks.length ? (completed / tasks.length) * 100 : 0;
@@ -20,8 +21,8 @@ export function TaskProgress({ tasks }: { tasks: Task[] }) {
     </div>
   );
 }
-export function TaskRow({ task }: { task: Task }) {
-  const { toggleTask } = useApp();
+export function TaskRow({ task, manageable = false }: { task: Task; manageable?: boolean }) {
+  const { toggleTask, setEditingTask, deleteTask } = useApp();
   return (
     <div className={cn("task-row", task.completed && "completed")}>
       <label className="task-check">
@@ -41,14 +42,15 @@ export function TaskRow({ task }: { task: Task }) {
         <i />
         {task.priority}
       </span>
+      {manageable && <EntityActions kind="task" name={task.title} onEdit={() => setEditingTask(task)} onDelete={() => deleteTask(task.id)} />}
     </div>
   );
 }
-export function TaskList({ tasks }: { tasks: Task[] }) {
+export function TaskList({ tasks, manageable = false }: { tasks: Task[]; manageable?: boolean }) {
   return tasks.length ? (
     <div className="task-list">
       {tasks.map((task) => (
-        <TaskRow task={task} key={task.id} />
+        <TaskRow task={task} key={task.id} manageable={manageable} />
       ))}
     </div>
   ) : (

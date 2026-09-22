@@ -46,7 +46,7 @@ export function Dashboard() {
       </div>
       <div className="social-grid">
         {socialAccounts.map((account) => (
-          <SocialMetricCard key={account.id} account={account} />
+          <SocialMetricCard key={account.id} account={account} href="/creator" />
         ))}
       </div>
       <div className="dashboard-grid">

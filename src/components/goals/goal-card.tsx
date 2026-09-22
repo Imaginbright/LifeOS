@@ -3,6 +3,7 @@ import { Flag, ArrowUpRight, CalendarDays } from "lucide-react";
 import { Progress } from "@/components/shared/primitives";
 import { useApp } from "@/components/shared/app-provider";
 import type { Goal } from "@/lib/types";
+import { EntityActions } from "@/components/shared/entity-actions";
 import { number, percent, shortDate, money } from "@/lib/utils";
 export function GoalCard({
   goal,
@@ -11,7 +12,7 @@ export function GoalCard({
   goal: Goal;
   compact?: boolean;
 }) {
-  const { setEditingGoal } = useApp();
+  const { setEditingGoal, deleteGoal } = useApp();
   const progress = percent(goal.currentValue, goal.targetValue);
   const value = (v: number) => (goal.unit === "NGN" ? money(v) : number(v));
   return (
@@ -21,18 +22,18 @@ export function GoalCard({
           <span className="soft-icon">
             <Flag size={21} />
           </span>
-          <span className="tag">{goal.category}</span>
+          <div className="goal-card-actions"><span className="tag">{goal.category}</span><EntityActions kind="goal" name={goal.title} onEdit={() => setEditingGoal(goal)} onDelete={() => deleteGoal(goal.id)} /></div>
         </div>
       )}
       <div className="goal-title">
         <h3>{goal.title}</h3>
-        <button
+        {compact && <button
           className="icon-button"
           aria-label={`Update ${goal.title}`}
           onClick={() => setEditingGoal(goal)}
         >
           <ArrowUpRight size={17} />
-        </button>
+        </button>}
       </div>
       {!compact && <p className="goal-description">{goal.description}</p>}
       <div className="goal-numbers">

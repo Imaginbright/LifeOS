@@ -38,6 +38,7 @@ export type Category =
 export type Task = {
   id: string;
   title: string;
+  notes?: string;
   date: string;
   completed: boolean;
   priority: "Low" | "Medium" | "High";

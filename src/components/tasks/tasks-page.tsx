@@ -38,6 +38,12 @@ export function TasksPage() {
     (task) =>
       task.scope === "daily" && task.date < current && !task.completed,
   );
+  const pastCompleted = tasks.filter(
+    (task) => task.scope === "daily" && task.date < current && task.completed,
+  );
+  const otherMonthly = tasks.filter(
+    (task) => task.scope === "monthly" && !task.date.startsWith(current.slice(0, 7)),
+  );
   return (
     <>
       <PageHeader
@@ -68,7 +74,7 @@ export function TasksPage() {
               </span>
             </div>
             <TaskProgress tasks={today} />
-            <TaskList tasks={today} />
+            <TaskList tasks={today} manageable />
           </section>
         </Tabs.Content>
         <Tabs.Content value="upcoming">
@@ -79,7 +85,7 @@ export function TasksPage() {
                   <h2>Ready for a fresh start</h2>
                   <span className="tag warning">{overdue.length} overdue</span>
                 </div>
-                <TaskList tasks={overdue} />
+                <TaskList tasks={overdue} manageable />
               </section>
             )}
             {[...new Set(upcoming.map((task) => task.date))]
@@ -95,10 +101,17 @@ export function TasksPage() {
                   </div>
                   <TaskList
                     tasks={upcoming.filter((task) => task.date === date)}
+                    manageable
                   />
                 </section>
               ))}
-            {!upcoming.length && !overdue.length && (
+            {pastCompleted.length > 0 && (
+              <section className="card">
+                <div className="section-title"><h2>Past tasks</h2><span className="muted">{pastCompleted.length} completed</span></div>
+                <TaskList tasks={pastCompleted} manageable />
+              </section>
+            )}
+            {!upcoming.length && !overdue.length && !pastCompleted.length && (
               <EmptyState
                 title="Your horizon is clear."
                 description="Add a task for a future date to see it here."
@@ -144,11 +157,25 @@ export function TasksPage() {
                   </div>
                   <TaskList
                     tasks={monthly.filter((task) => task.category === category)}
+                    manageable
                   />
                 </section>
               ),
             )}
           </div>
+          {otherMonthly.length > 0 && (
+            <div className="upcoming-groups monthly-archive">
+              {[...new Set(otherMonthly.map((task) => task.date.slice(0, 7)))].sort().reverse().map((month) => (
+                <section className="card" key={month}>
+                  <div className="section-title">
+                    <h2>{format(parseISO(`${month}-01`), "MMMM yyyy")}</h2>
+                    <span className="muted">{otherMonthly.filter((task) => task.date.startsWith(month)).length} tasks</span>
+                  </div>
+                  <TaskList tasks={otherMonthly.filter((task) => task.date.startsWith(month))} manageable />
+                </section>
+              ))}
+            </div>
+          )}
         </Tabs.Content>
       </Tabs.Root>
     </>

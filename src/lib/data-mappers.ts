@@ -7,7 +7,7 @@ type Row<T extends keyof Tables> = Tables[T]["Row"];
 const titleCase = (value: string) => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
 export function mapTask(row: Row<"tasks">): Task {
-  return { id: row.id, title: row.title, date: row.due_date ?? row.period_month ?? row.created_at.slice(0, 10), completed: row.completed, priority: titleCase(row.priority) as Task["priority"], category: row.category as Task["category"], scope: row.scope as Task["scope"] };
+  return { id: row.id, title: row.title, notes: row.notes ?? "", date: row.due_date ?? row.period_month ?? row.created_at.slice(0, 10), completed: row.completed, priority: titleCase(row.priority) as Task["priority"], category: row.category as Task["category"], scope: row.scope as Task["scope"] };
 }
 
 export function mapGoal(row: Row<"goals">): Goal {
