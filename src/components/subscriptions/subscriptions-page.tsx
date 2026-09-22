@@ -9,18 +9,19 @@ import {
   PageHeader,
 } from "@/components/shared/primitives";
 import { subscriptionTotals, nextRenewals } from "@/lib/subscription-utils";
-import { DEMO_TODAY } from "@/lib/mock-data";
+import { todayDate } from "@/lib/date";
 import { money, shortDate } from "@/lib/utils";
 import type { Currency } from "@/lib/types";
 import { SubscriptionGrid, SubscriptionList } from "./subscription-views";
 export function SubscriptionsPage() {
   const { subscriptions, setAddKind, preferences } = useApp();
   const [currency, setCurrency] = useState<Currency>(preferences.currency);
-  const filtered = subscriptions.filter(
+  const effective = nextRenewals(subscriptions, todayDate());
+  const filtered = effective.filter(
     (item) => item.active && item.currency === currency,
   );
   const totals = subscriptionTotals(subscriptions, currency);
-  const next = nextRenewals(filtered, DEMO_TODAY)[0];
+  const next = filtered[0];
   return (
     <>
       <PageHeader

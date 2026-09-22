@@ -13,7 +13,8 @@ import {
   Inbox,
 } from "lucide-react";
 import { useApp } from "./app-provider";
-import { DEMO_TODAY } from "@/lib/mock-data";
+import { todayDate } from "@/lib/date";
+import { addDays, addMonths, format } from "date-fns";
 import type { Category, Currency, Subscription, Task } from "@/lib/types";
 export function QuickAdd() {
   const app = useApp();
@@ -34,15 +35,16 @@ export function QuickAdd() {
         : app.addKind === "goal"
           ? "Something to work toward."
           : "Keep track of the little things.";
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const str = (key: string) => String(data.get(key) ?? "");
     const num = (key: string) => Number(data.get(key));
+    let saved;
     if (app.editingGoal)
-      app.updateGoal(app.editingGoal.id, num("currentValue"));
+      saved = await app.updateGoal(app.editingGoal.id, num("currentValue"));
     else if (app.addKind === "task")
-      app.addTask({
+      saved = await app.addTask({
         title: str("title").trim(),
         date: str("date"),
         category: str("category") as Category,
@@ -51,7 +53,7 @@ export function QuickAdd() {
         completed: false,
       });
     else if (app.addKind === "goal")
-      app.addGoal({
+      saved = await app.addGoal({
         title: str("title").trim(),
         description: str("description").trim(),
         currentValue: num("currentValue"),
@@ -61,7 +63,7 @@ export function QuickAdd() {
         deadline: str("deadline"),
       });
     else
-      app.addSubscription({
+      saved = await app.addSubscription({
         name: str("name").trim(),
         amount: num("amount"),
         currency: str("currency") as Currency,
@@ -72,7 +74,7 @@ export function QuickAdd() {
         category: str("category"),
         active: true,
       });
-    close();
+    if (saved) close();
   }
   return (
     <Dialog.Root
@@ -84,7 +86,6 @@ export function QuickAdd() {
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content
-          data-theme={app.preferences.appearance}
           className="dialog-content"
           aria-describedby="dialog-description"
           onOpenAutoFocus={() => {
@@ -220,7 +221,7 @@ export function QuickAdd() {
                       <input
                         name="date"
                         type="date"
-                        defaultValue={DEMO_TODAY}
+                        defaultValue={todayDate()}
                         required
                       />
                     </label>
@@ -311,7 +312,7 @@ export function QuickAdd() {
                       <input
                         name="deadline"
                         type="date"
-                        defaultValue="2026-12-31"
+                        defaultValue={format(addMonths(new Date(), 3), "yyyy-MM-dd")}
                         required
                       />
                     </label>
@@ -383,7 +384,7 @@ export function QuickAdd() {
                       <input
                         name="renewalDate"
                         type="date"
-                        defaultValue="2026-09-26"
+                        defaultValue={format(addDays(new Date(), 7), "yyyy-MM-dd")}
                         required
                       />
                     </label>
@@ -425,8 +426,8 @@ export function QuickAdd() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="button primary">
-                  {app.editingGoal ? "Save progress" : `Add ${app.addKind}`}
+                <button type="submit" className="button primary" disabled={app.pending}>
+                  {app.pending ? "Saving…" : app.editingGoal ? "Save progress" : `Add ${app.addKind}`}
                   <ArrowRight size={16} />
                 </button>
               </div>

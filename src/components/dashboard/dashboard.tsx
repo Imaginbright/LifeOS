@@ -8,7 +8,8 @@ import {
   PageHeader,
   SectionTitle,
 } from "@/components/shared/primitives";
-import { socialAccounts, DEMO_TODAY } from "@/lib/mock-data";
+import { todayDate } from "@/lib/date";
+import { format } from "date-fns";
 import { money, shortDate } from "@/lib/utils";
 import { nextRenewals, subscriptionTotals } from "@/lib/subscription-utils";
 import { SocialMetricCard } from "./social-metric-card";
@@ -17,20 +18,21 @@ import { GoalCard } from "@/components/goals/goal-card";
 import { SubscriptionGrid } from "@/components/subscriptions/subscription-views";
 import { InboxItem } from "@/components/inbox/inbox-item";
 export function Dashboard() {
-  const { tasks, goals, subscriptions, inbox, setAddKind, preferences } =
+  const { tasks, goals, subscriptions, inbox, socialAccounts, setAddKind, preferences } =
     useApp();
+  const today = todayDate();
   const todayTasks = tasks.filter(
-    (task) => task.date === DEMO_TODAY && task.scope === "daily",
+    (task) => task.date === today && task.scope === "daily",
   );
   const totals = subscriptionTotals(subscriptions, preferences.currency);
-  const next = nextRenewals(subscriptions, DEMO_TODAY)[0];
-  const previews = subscriptions
+  const next = nextRenewals(subscriptions, today)[0];
+  const previews = nextRenewals(subscriptions, today)
     .filter((item) => item.active && item.currency === preferences.currency)
     .slice(0, 3);
   return (
     <>
       <PageHeader
-        eyebrow="Sunday, September 20, 2026"
+        eyebrow={format(new Date(), "EEEE, MMMM d, yyyy")}
         title={`Good morning, ${preferences.name}.`}
         action={
           <AddButton onClick={() => setAddKind("task")}>Add task</AddButton>

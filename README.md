@@ -1,69 +1,65 @@
 # LifeOS
 
-A private personal dashboard frontend, built with Next.js 16.3.5, React 19, TypeScript, Tailwind CSS 4, Geist, Lucide, Recharts, date-fns, and accessible Radix dialog/tab primitives.
+LifeOS is a private personal dashboard built with Next.js 16, React 19, TypeScript, and Supabase. It keeps tasks, goals, subscriptions, an internal inbox, calendar events, profile settings, and creator statistics in one owner-only workspace.
 
-## Run locally
+## Local setup
 
-Use Node.js 22 or newer. From this project folder:
+Use Node.js 22 or newer.
 
 ```sh
 npm ci
+copy .env.example .env.local
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). For a production preview:
+Fill `.env.local` with the linked Supabase project values. `NEXT_PUBLIC_APP_URL` should be `http://localhost:3000` locally and `https://lifeos-navy-six.vercel.app` in production. The secret Supabase key is only imported by server-only modules.
+
+Create the owner account in Supabase Authentication using email and password. LifeOS intentionally has no public sign-up screen. A database trigger creates the corresponding profile, and existing Auth users are backfilled by the migration.
+
+## Database
+
+SQL migrations live in `supabase/migrations`. They create the application tables, validation constraints, indexes, update triggers, grants, and owner-only Row Level Security policies. `oauth_credentials` has RLS enabled, no browser policies, and no `anon` or `authenticated` privileges.
 
 ```sh
-npm run build
-npm start
+npx supabase db push --dry-run
+npx supabase db push
+npx supabase gen types typescript --linked --schema public > src/lib/database.types.ts
 ```
 
-## Included
+The checked-in database types are generated from the linked schema. Do not edit them by hand.
 
-- Dashboard: audience cards, today's checklist, goal progress, subscriptions, and internal notifications.
-- Tasks: Today, Upcoming (including overdue tasks), and grouped Monthly views. Inbox links open the relevant tab.
-- Goals: typed goal cards, creation, and editable progress.
-- Creator: five historical ranges, interactive platform visibility, and chart tooltips.
-- Subscriptions: variable-size grid, responsive list, manual addition, and separate totals for NGN, USD, GBP, and EUR.
-- Inbox: read states, mark-all-read, dismissal, and contextual links.
-- Calendar: month navigation, selectable days, and events drawn from the current task, goal, and subscription state.
-- Settings: display name, light/dark/system appearance, currency, week start, and a future reminder preference. Creator connections are explicitly unavailable.
-- Global quick add: keyboard-accessible dialog on desktop and bottom sheet on mobile. Secondary mobile routes are accessible from the quick-add menu.
-- Public legal pages: responsive Privacy Policy and Terms of Service pages with canonical production URLs, shared contact details, theme controls, and links from the dashboard footer.
+## Authentication and routes
 
-## Project structure
+`/login`, `/privacy`, and `/terms` are public. The Next.js 16 `proxy.ts` session layer protects the dashboard and refreshes Supabase auth cookies. Every mutation route also validates the user and relies on RLS or explicit server-side ownership checks.
 
-```text
-src/app/                       App Router routes, layout, loading and not-found states
-src/components/layout/         Desktop sidebar, top bar, mobile navigation
-src/components/dashboard/      Dashboard composition and reusable social cards
-src/components/tasks/          Task checklist, progress, and grouped views
-src/components/goals/          Goal cards, progress, and page
-src/components/creator/        Audience chart and period controls
-src/components/subscriptions/  Grid, tiles, responsive list, and page
-src/components/inbox/          Reusable notification rows and page
-src/components/calendar/       Basic month calendar and daily agenda
-src/components/settings/       Local preferences
-src/components/legal/          Reusable public legal-document presentation
-src/components/shared/         Typed state provider, dialogs, empty states, skeletons
-src/lib/types.ts               Shared domain models
-src/lib/mock-data.ts           Centralized typed demo data and fixed demo clock
-src/lib/subscription-utils.ts  Billing normalization and currency-specific totals
-src/lib/site.ts                Production URL, support contact, and legal date
-src/app/globals.css            Palette variables, visual system, responsive rules
-tests/                        Calculation and browser interaction checks
-artifacts/                    Desktop/mobile preview screenshots
-```
+Profile preferences, task completion, quick additions, goal check-ins, subscription entries, and inbox read/dismiss state are persisted. The internal inbox is generated from real overdue tasks, approaching goal deadlines, upcoming subscription renewals, provider connection errors, and audience milestones. Deterministic event keys prevent duplicate notifications.
 
-## Mock-data boundaries
+## Creator connections
 
-All application data is mock data. State is shared across client-side navigation and resets on refresh. There is no authentication, database, server persistence, integration, or API route. Fonts are bundled locally; the UI does not fetch social or financial data.
+YouTube uses Google's server-side OAuth flow with the `youtube.readonly` scope, offline access, refresh tokens, and `channels.list?mine=true`. Configure these exact callback URLs in Google Cloud:
 
-The demo date is **September 20, 2026**, intentionally keeping mock tasks, reminders, calendar dates, and renewal labels consistent. The greeting uses the sample profile name, Somto, which can be changed in Settings.
+- `http://localhost:3000/api/integrations/youtube/callback`
+- `https://lifeos-navy-six.vercel.app/api/integrations/youtube/callback`
 
-Monthly subscription equivalents use `yearly / 12`, `weekly × 52 / 12`, and `custom × 365 / (12 × intervalDays)`. Custom intervals are required when adding a custom plan. Totals exclude inactive plans and never combine currencies. The stored renewal date is entered manually; automatic renewal scheduling is outside this prototype.
+YouTube may return rounded public subscriber totals; LifeOS stores and displays the value supplied by the API without inventing extra precision.
 
-To connect real data later, replace the provider's initial data and mutation handlers. Presentational components already accept the shared domain types. Calendar events derive from the same state, and subscription calculations are centralized.
+TikTok uses Login Kit v2 with `user.info.basic,user.info.stats`. The current credentials are treated as Sandbox credentials. TikTok requires an HTTPS redirect, so connection is available from the deployed app using:
+
+- `https://lifeos-navy-six.vercel.app/api/integrations/tiktok/callback`
+
+Instagram remains in a visible **Needs setup** state until official Meta developer access is ready.
+
+OAuth state is stored in a short-lived HttpOnly, SameSite=Lax cookie and compared safely on callback. Provider tokens stay server-side. Disconnect removes credentials, attempts provider revocation, marks the account disconnected, and preserves historical snapshots.
+
+## Synchronization
+
+Connected accounts can be synced manually from Settings. Manual calls have a one-minute guard per account. `vercel.json` schedules one daily run at 06:00 UTC through `/api/cron/social-sync`.
+
+Set a strong `CRON_SECRET` in Vercel to enable automatic synchronization. Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. If a future plan supports more frequent schedules, the cron can be changed to every six hours. One provider failure is isolated from the others.
+
+## Appearance persistence
+
+The root `next-themes` provider is the browser UI source of truth. It stores the Light, Dark, or System choice under `lifeos-theme` and applies the resolved class to `<html>` before paint. For signed-in users, the server supplies the profile appearance as the first-visit default. A browser choice takes precedence during reconciliation and is then copied to the profile for cross-device synchronization; a late profile fetch never changes an already restored browser theme.
 
 ## Checks
 
@@ -74,15 +70,8 @@ npm test
 npm run build
 ```
 
-With the app running on port 3000 and Google Chrome installed:
+Public browser tests run without credentials. Authenticated browser coverage is enabled only when the documented E2E owner credentials are present, so secrets never need to be committed.
 
 ```sh
 npm run test:browser
-node scripts/capture-preview.mjs
 ```
-
-The browser suite covers all ten routes at 1440, 1024, 820, 768, 390, and 360 pixels, plus task completion, quick add, goal updates, custom subscription billing, currency isolation, chart periods, calendar navigation, settings, inbox actions, mobile navigation, and public legal-page behavior. Screenshots are saved in `artifacts/`.
-
-Dialogs trap focus, close with Escape, and restore focus. Tabs use keyboard-accessible Radix primitives; task controls use native checkboxes. A skip link, visible focus states, live announcements, semantic headings, and reduced-motion styles are included.
-
-Format source with `npm run format`.

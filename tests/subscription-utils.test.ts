@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   monthlyEquivalent,
+  effectiveRenewalDate,
   nextRenewals,
   subscriptionTotals,
 } from "../src/lib/subscription-utils";
@@ -57,16 +58,20 @@ test("totals never combine different currencies or inactive subscriptions", () =
     count: 0,
   });
 });
-test("renewal sorting includes today, ignores past and inactive plans, and preserves input order", () => {
+test("renewal sorting advances past dates by their calendar-aware billing cycle", () => {
   const items = [
     base,
     { ...base, id: "today", renewalDate: "2026-09-20" },
     { ...base, id: "past", renewalDate: "2026-09-19" },
     { ...base, id: "inactive", active: false },
   ];
-  assert.deepEqual(
-    nextRenewals(items, "2026-09-20").map((item) => item.id),
-    ["today", "test"],
-  );
+  assert.deepEqual(nextRenewals(items, "2026-09-20").map((item) => item.id), ["today", "test", "past"]);
   assert.equal(items[0].id, "test");
+});
+
+test("monthly and yearly renewals respect calendar month lengths", () => {
+  assert.equal(effectiveRenewalDate({ ...base, renewalDate: "2026-01-31" }, "2026-02-20"), "2026-02-28");
+  assert.equal(effectiveRenewalDate({ ...base, renewalDate: "2026-01-31" }, "2026-03-20"), "2026-03-31");
+  assert.equal(effectiveRenewalDate({ ...base, billingCycle: "yearly", renewalDate: "2024-02-29" }, "2025-02-20"), "2025-02-28");
+  assert.equal(effectiveRenewalDate({ ...base, billingCycle: "custom", customIntervalDays: 10, renewalDate: "2026-09-01" }, "2026-09-20"), "2026-09-21");
 });

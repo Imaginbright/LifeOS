@@ -1,4 +1,5 @@
 import type { Currency, Subscription } from "./types";
+import { addDays, addMonths, addWeeks, addYears, format, isBefore, parseISO } from "date-fns";
 export function monthlyEquivalent(subscription: Subscription): number {
   if (!subscription.active) return 0;
   switch (subscription.billingCycle) {
@@ -27,6 +28,26 @@ export function subscriptionTotals(items: Subscription[], currency: Currency) {
 }
 export function nextRenewals(items: Subscription[], today: string) {
   return items
-    .filter((item) => item.active && item.renewalDate >= today)
+    .filter((item) => item.active)
+    .map((item) => ({ ...item, renewalDate: effectiveRenewalDate(item, today) }))
     .sort((a, b) => a.renewalDate.localeCompare(b.renewalDate));
+}
+
+export function effectiveRenewalDate(subscription: Subscription, today: string) {
+  const original = parseISO(subscription.renewalDate);
+  let renewal = original;
+  const current = parseISO(today);
+  if (!isBefore(renewal, current)) return subscription.renewalDate;
+  let periods = 0;
+  const advance = () => {
+    periods += 1;
+    switch (subscription.billingCycle) {
+      case "weekly": renewal = addWeeks(original, periods); break;
+      case "monthly": renewal = addMonths(original, periods); break;
+      case "yearly": renewal = addYears(original, periods); break;
+      case "custom": renewal = addDays(original, periods * (subscription.customIntervalDays || 1)); break;
+    }
+  };
+  while (isBefore(renewal, current)) advance();
+  return format(renewal, "yyyy-MM-dd");
 }

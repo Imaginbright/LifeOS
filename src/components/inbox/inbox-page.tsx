@@ -2,10 +2,11 @@
 import { CheckCheck } from "lucide-react";
 import { useApp } from "@/components/shared/app-provider";
 import { EmptyState, PageHeader } from "@/components/shared/primitives";
-import { DEMO_TODAY } from "@/lib/mock-data";
+import { todayDate } from "@/lib/date";
 import { InboxItem } from "./inbox-item";
 export function InboxPage() {
   const { inbox, markRead } = useApp();
+  const today = todayDate();
   const unread = inbox.filter((item) => !item.read).length;
   return (
     <>
@@ -29,8 +30,8 @@ export function InboxPage() {
           {["Today", "Earlier"].map((group) => {
             const items = inbox.filter((item) =>
               group === "Today"
-                ? item.date.startsWith(DEMO_TODAY)
-                : !item.date.startsWith(DEMO_TODAY),
+                ? item.date.startsWith(today)
+                : !item.date.startsWith(today),
             );
             return (
               items.length > 0 && (

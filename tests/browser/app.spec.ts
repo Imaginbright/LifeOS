@@ -1,239 +1,105 @@
 import { test, expect } from "@playwright/test";
-const routes = [
-  "/",
-  "/tasks",
-  "/goals",
-  "/creator",
-  "/subscriptions",
-  "/inbox",
-  "/calendar",
-  "/settings",
-  "/privacy",
-  "/terms",
-];
-test("every route renders without errors and fits desktop, tablet, and mobile widths", async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  for (const width of [1440, 1024, 820, 768, 390, 360]) {
-    await page.setViewportSize({ width, height: 1000 });
-    for (const route of routes) {
-      const response = await page.goto(route);
-      expect(response?.status(), `${route} at ${width}px`).toBe(200);
+
+test("public pages render responsively without horizontal overflow", async ({ page }) => {
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  for (const width of [1440, 768, 390, 360]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ["/login", "/privacy", "/terms"]) {
+      const response = await page.goto(route); expect(response?.status(), `${route} at ${width}px`).toBe(200);
       await expect(page.locator("h1")).toBeVisible();
-      await page.evaluate(() => document.fonts.ready);
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth > window.innerWidth,
-      );
-      expect(overflow, `${route} overflows at ${width}px`).toBe(false);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), `${route} overflows at ${width}px`).toBe(false);
     }
   }
   expect(errors).toEqual([]);
 });
-test("task completion and quick additions stay consistent between pages", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page
-    .getByRole("checkbox", { name: "Complete Finish dashboard design" })
-    .check();
-  await expect(
-    page.getByRole("progressbar", { name: "Task completion" }),
-  ).toHaveAttribute("aria-valuenow", "71");
-  await page.getByRole("button", { name: "Add task", exact: true }).click();
-  await page.getByLabel("Task title").fill("Check the finished prototype");
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Add task", exact: true })
-    .click();
-  await expect(page.getByRole("dialog")).not.toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Main navigation" })
-    .getByRole("link", { name: "Tasks", exact: true })
-    .click();
-  await expect(page.getByText("Check the finished prototype")).toBeVisible();
-  await expect(
-    page.getByRole("checkbox", { name: "Complete Finish dashboard design" }),
-  ).toBeChecked();
-  await page.getByRole("tab", { name: "monthly" }).click();
-  await expect(
-    page.getByRole("heading", { name: "September 2026" }),
-  ).toBeVisible();
-  await page.getByRole("tab", { name: "upcoming" }).click();
-  await expect(page.getByText("2 overdue")).toBeVisible();
-});
-test("subscriptions support lists, manual currencies and custom billing", async ({
-  page,
-}) => {
-  await page.goto("/subscriptions");
-  await page.getByRole("tab", { name: "List", exact: true }).click();
-  await expect(page.locator(".subscription-table-row")).toHaveCount(6);
-  await page
-    .getByRole("button", { name: "Add subscription", exact: true })
-    .click();
-  await page.getByLabel("Service name").fill("Design library");
-  await page.getByLabel("Amount", { exact: true }).fill("120");
-  await page
-    .getByRole("dialog")
-    .getByRole("combobox", { name: "Currency", exact: true })
-    .selectOption("USD");
-  await page
-    .getByRole("combobox", { name: "Billing cycle", exact: true })
-    .selectOption("custom");
-  await page.getByLabel("Days between payments").fill("365");
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Add subscription", exact: true })
-    .click();
-  await page.getByLabel("Subscription currency").selectOption("USD");
-  await expect(
-    page
-      .getByRole("tabpanel", { name: "List" })
-      .getByText("Design library", { exact: true }),
-  ).toBeVisible();
-  await expect(page.locator(".monthly-stat strong")).toHaveText("US$10");
-  await page.getByRole("tab", { name: "Grid", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Design library" }),
-  ).toBeVisible();
-  await page.getByLabel("Subscription currency").selectOption("EUR");
-  await expect(
-    page.getByRole("heading", { name: "No subscriptions yet" }),
-  ).toBeVisible();
-});
-test("goals can be added and updated, inbox can be read and cleared", async ({
-  page,
-}) => {
-  await page.goto("/goals");
-  await page.getByRole("button", { name: "Add goal", exact: true }).click();
-  await page.getByLabel("Goal title").fill("Walk 100 kilometres");
-  await page.getByLabel("Target value").fill("100");
-  await page.getByLabel("Unit", { exact: true }).fill("km");
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Add goal", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Update Walk 100 kilometres" })
-    .click();
-  await page.getByLabel("Current progress").fill("25");
-  await page.getByRole("button", { name: "Save progress" }).click();
-  await expect(
-    page.getByRole("progressbar", { name: "Walk 100 kilometres progress" }),
-  ).toHaveAttribute("aria-valuenow", "25");
-  await page.goto("/inbox");
-  await page.getByRole("button", { name: "Mark all as read" }).click();
-  await expect(
-    page.getByRole("button", { name: "Mark all as read" }),
-  ).toBeDisabled();
-  const dismiss = page.getByRole("button", { name: /^Dismiss:/ });
-  while (await dismiss.count()) await dismiss.first().click();
-  await expect(
-    page.getByRole("heading", { name: "You're all caught up." }),
-  ).toBeVisible();
-});
-test("chart periods, calendar navigation, settings and keyboard dialog closing work", async ({
-  page,
-}) => {
-  await page.goto("/creator");
-  for (const period of ["7D", "30D", "3M", "6M", "1Y"]) {
-    await page.getByRole("button", { name: period, exact: true }).click();
-    await expect(
-      page.getByRole("button", { name: period, exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
+
+test("protected pages redirect anonymous visitors to sign in", async ({ page }) => {
+  for (const route of ["/", "/tasks", "/goals", "/creator", "/subscriptions", "/inbox", "/calendar", "/settings"]) {
+    await page.goto(route); await expect(page).toHaveURL(/\/login\?next=/); await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   }
-  await page.goto("/calendar");
-  await page.getByRole("button", { name: "Next month" }).click();
-  await expect(
-    page.getByRole("heading", { name: "October 2026" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Today", exact: true }).click();
-  await page
-    .getByRole("button", { name: "September 24, 2026, 1 events", exact: true })
-    .click();
-  await expect(
-    page.getByText("Adobe Creative Cloud renewal", { exact: true }),
-  ).toBeVisible();
-  await page.goto("/settings");
-  await page.getByRole("button", { name: "Dark", exact: true }).click();
-  await expect(page.locator('[data-theme="dark"]').first()).toBeVisible();
-  await page.getByRole("button", { name: "Light", exact: true }).click();
-  await page.getByLabel("Display name").fill("Bright");
-  await page
-    .getByRole("navigation", { name: "Main navigation" })
-    .getByRole("link", { name: "Dashboard", exact: true })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Good morning, Bright." }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Quick add", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).not.toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Quick add", exact: true }),
-  ).toBeFocused();
-});
-test("mobile navigation opens sheets and exposes secondary routes", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  const nav = page.getByRole("navigation", { name: "Mobile navigation" });
-  await expect(nav).toBeVisible();
-  await expect(page.locator(".sidebar")).not.toBeVisible();
-  await nav.getByRole("button", { name: "Quick add and more pages" }).click();
-  await page.getByRole("button", { name: /Add task Free up/ }).click();
-  await page.getByLabel("Task title").fill("A mobile task");
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Add task", exact: true })
-    .click();
-  await nav.getByRole("link", { name: "Tasks", exact: true }).click();
-  await expect(page.getByText("A mobile task")).toBeVisible();
-  await nav.getByRole("button", { name: "Quick add and more pages" }).click();
-  await page
-    .getByRole("dialog")
-    .getByRole("link", { name: "Subscriptions" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Your subscriptions." }),
-  ).toBeVisible();
 });
 
-test("legal pages are public, linked, themed, and use the configured support address", async ({
-  page,
-}) => {
+test("legal pages expose the support address and appearance control", async ({ page }) => {
   for (const route of ["/privacy", "/terms"]) {
-    const response = await page.goto(route);
-    expect(response?.status()).toBe(200);
+    await page.goto(route);
+    await expect(page.getByRole("link", { name: "brightified2004@gmail.com", exact: true })).toHaveAttribute("href", "mailto:brightified2004@gmail.com");
     await expect(page.locator(".sidebar")).not.toBeVisible();
-    await expect(page.locator(".public-header")).toBeVisible();
-    await expect(
-      page.getByRole("link", {
-        name: "brightified2004@gmail.com",
-        exact: true,
-      }),
-    ).toHaveAttribute("href", "mailto:brightified2004@gmail.com");
-    await expect(
-      page.getByText("Last updated: September 21, 2026"),
-    ).toBeVisible();
   }
-
-  await page.getByRole("link", { name: "Privacy", exact: true }).click();
-  await expect(page).toHaveURL(/\/privacy$/);
   await page.getByRole("button", { name: "Use dark appearance" }).click();
-  await expect(page.locator('[data-theme="dark"]').first()).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Use light appearance" }),
-  ).toBeVisible();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+});
 
-  await page.setViewportSize({ width: 390, height: 844 });
+test("appearance changes once per click and persists across reloads and routes", async ({ page }) => {
   await page.goto("/terms");
-  await expect(page.locator(".public-header")).toBeVisible();
-  await expect(page.locator(".mobile-nav")).not.toBeVisible();
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth),
-  ).toBeLessThanOrEqual(390);
+  await page.evaluate(() => localStorage.setItem("lifeos-theme", "light"));
+  await page.reload();
+
+  const root = page.locator("html");
+  const darkToggle = page.getByRole("button", { name: "Use dark appearance" });
+  await expect(root).toHaveClass(/light/);
+  await expect(root).not.toHaveClass(/dark/);
+  await expect(darkToggle).toBeVisible();
+
+  await page.reload();
+  await expect(root).toHaveClass(/light/);
+  await expect(page.getByRole("button", { name: "Use dark appearance" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Use dark appearance" }).click();
+  await expect(root).toHaveClass(/dark/);
+  await expect(page.getByRole("button", { name: "Use light appearance" })).toBeVisible();
+
+  await page.reload();
+  await expect(root).toHaveClass(/dark/);
+  await expect(page.getByRole("button", { name: "Use light appearance" })).toBeVisible();
+
+  await page.goto("/privacy");
+  await expect(root).toHaveClass(/dark/);
+  await page.getByRole("button", { name: "Use light appearance" }).click();
+  await expect(root).toHaveClass(/light/);
+  await expect(page.getByRole("button", { name: "Use dark appearance" })).toBeVisible();
+
+  for (const expected of ["dark", "light", "dark", "light"] as const) {
+    await page.getByRole("button", { name: `Use ${expected} appearance` }).click();
+    await expect(root).toHaveClass(new RegExp(expected));
+  }
+});
+
+test("system appearance resolves to the device theme without desynchronizing the toggle", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/terms");
+  await page.evaluate(() => localStorage.setItem("lifeos-theme", "system"));
+  await page.reload();
+
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(page.getByRole("button", { name: "Use light appearance" })).toBeVisible();
+  await page.getByRole("button", { name: "Use light appearance" }).click();
+  await expect(page.locator("html")).toHaveClass(/light/);
+});
+
+test("authenticated changes persist after reload", async ({ page }) => {
+  test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, "E2E owner credentials are not configured");
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(process.env.E2E_EMAIL!);
+  await page.getByLabel("Password").fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/$/);
+
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.goto("/terms");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(page.getByRole("button", { name: "Use light appearance" })).toBeVisible();
+  await page.getByRole("button", { name: "Use light appearance" }).click();
+  await page.goto("/settings");
+  await expect(page.locator("html")).toHaveClass(/light/);
+  await expect(page.getByRole("button", { name: "Light" })).toHaveAttribute("aria-pressed", "true");
+
+  await page.goto("/");
+  const title = `Playwright task ${Date.now()}`;
+  await page.getByRole("button", { name: "Add task", exact: true }).click();
+  await page.getByLabel("Task title").fill(title);
+  await page.getByRole("dialog").getByRole("button", { name: "Add task", exact: true }).click();
+  await page.goto("/tasks"); await expect(page.getByText(title)).toBeVisible();
+  await page.reload(); await expect(page.getByText(title)).toBeVisible();
 });

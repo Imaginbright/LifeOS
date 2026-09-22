@@ -14,20 +14,21 @@ import {
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { useApp } from "@/components/shared/app-provider";
 import { EmptyState, PageHeader } from "@/components/shared/primitives";
-import { calendarItems, demoDate, DEMO_TODAY } from "@/lib/mock-data";
+import { todayDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { CalendarItem } from "@/lib/types";
+import { nextRenewals } from "@/lib/subscription-utils";
 export function CalendarPage() {
   const { tasks, goals, subscriptions, preferences } = useApp();
-  const [month, setMonth] = useState(demoDate);
-  const [selected, setSelected] = useState(DEMO_TODAY);
+  const today = todayDate();
+  const [month, setMonth] = useState(() => new Date(`${today}T12:00:00`));
+  const [selected, setSelected] = useState(today);
   const weekStartsOn = preferences.startOfWeek === "monday" ? 1 : 0;
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn }),
   });
   const items: CalendarItem[] = [
-    ...calendarItems,
     ...tasks
       .filter((task) => task.scope === "daily")
       .map((task) => ({
@@ -44,8 +45,7 @@ export function CalendarPage() {
       category: "goal" as const,
       href: "/goals",
     })),
-    ...subscriptions
-      .filter((item) => item.active)
+    ...nextRenewals(subscriptions, today)
       .map((item) => ({
         id: item.id,
         title: `${item.name} renewal`,
@@ -77,8 +77,8 @@ export function CalendarPage() {
               <button
                 className="button secondary"
                 onClick={() => {
-                  setMonth(demoDate);
-                  setSelected(DEMO_TODAY);
+                  setMonth(new Date(`${today}T12:00:00`));
+                  setSelected(today);
                 }}
               >
                 Today
@@ -108,7 +108,7 @@ export function CalendarPage() {
                     "calendar-day",
                     !isSameMonth(day, month) && "outside",
                     date === selected && "selected",
-                    date === DEMO_TODAY && "today",
+                    date === today && "today",
                   )}
                   onClick={() => setSelected(date)}
                   aria-label={`${format(day, "MMMM d, yyyy")}, ${events.length} events`}

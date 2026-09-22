@@ -5,8 +5,14 @@ export default defineConfig({
   expect: { timeout: 10000 },
   workers: 1,
   reporter: "list",
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:3000/login",
+    reuseExistingServer: true,
+    timeout: 120000,
+  },
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: "http://localhost:3000",
     channel: "chrome",
     headless: true,
     screenshot: "only-on-failure",

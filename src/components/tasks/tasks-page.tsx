@@ -9,9 +9,11 @@ import {
   PageHeader,
 } from "@/components/shared/primitives";
 import { TaskList, TaskProgress } from "./task-list";
-import { DEMO_TODAY } from "@/lib/mock-data";
+import { todayDate } from "@/lib/date";
 export function TasksPage() {
   const { tasks, setAddKind } = useApp();
+  const current = todayDate();
+  const currentDate = parseISO(current);
   const searchParams = useSearchParams();
   const selected = searchParams.get("view");
   const view =
@@ -24,17 +26,17 @@ export function TasksPage() {
     );
   };
   const today = tasks.filter(
-    (task) => task.scope === "daily" && task.date === DEMO_TODAY,
+    (task) => task.scope === "daily" && task.date === current,
   );
   const monthly = tasks.filter(
-    (task) => task.scope === "monthly" && task.date.startsWith("2026-09"),
+    (task) => task.scope === "monthly" && task.date.startsWith(current.slice(0, 7)),
   );
   const upcoming = tasks.filter(
-    (task) => task.scope === "daily" && task.date > DEMO_TODAY,
+    (task) => task.scope === "daily" && task.date > current,
   );
   const overdue = tasks.filter(
     (task) =>
-      task.scope === "daily" && task.date < DEMO_TODAY && !task.completed,
+      task.scope === "daily" && task.date < current && !task.completed,
   );
   return (
     <>
@@ -59,10 +61,10 @@ export function TasksPage() {
             <div className="section-title">
               <div>
                 <p className="eyebrow">Today</p>
-                <h2>Sunday, September 20</h2>
+                <h2>{format(currentDate, "EEEE, MMMM d")}</h2>
               </div>
               <span className="date-tile">
-                20<small>SEP</small>
+                {format(currentDate, "d")}<small>{format(currentDate, "MMM").toUpperCase()}</small>
               </span>
             </div>
             <TaskProgress tasks={today} />
@@ -109,7 +111,7 @@ export function TasksPage() {
             <div>
               <p className="eyebrow">The bigger picture</p>
               <h2>
-                September <span>2026</span>
+                {format(currentDate, "MMMM")} <span>{format(currentDate, "yyyy")}</span>
               </h2>
             </div>
             <div>

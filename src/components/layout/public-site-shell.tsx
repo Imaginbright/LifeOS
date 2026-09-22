@@ -7,8 +7,8 @@ import { useApp } from "@/components/shared/app-provider";
 import { SUPPORT_EMAIL } from "@/lib/site";
 
 export function PublicSiteShell({ children }: { children: ReactNode }) {
-  const { preferences, setPreferences } = useApp();
-  const dark = preferences.appearance === "dark";
+  const { resolvedAppearance, setAppearance, themeReady } = useApp();
+  const dark = resolvedAppearance === "dark";
 
   return (
     <div className="public-site-shell">
@@ -28,15 +28,11 @@ export function PublicSiteShell({ children }: { children: ReactNode }) {
           <button
             className="icon-button legal-theme-toggle"
             type="button"
-            aria-label={`Use ${dark ? "light" : "dark"} appearance`}
-            onClick={() =>
-              setPreferences((current) => ({
-                ...current,
-                appearance: dark ? "light" : "dark",
-              }))
-            }
+            aria-label={themeReady ? `Use ${dark ? "light" : "dark"} appearance` : "Change appearance"}
+            disabled={!themeReady}
+            onClick={() => setAppearance(dark ? "light" : "dark")}
           >
-            {dark ? <Sun size={18} /> : <Moon size={18} />}
+            {themeReady ? (dark ? <Sun size={18} /> : <Moon size={18} />) : <span className="theme-icon-placeholder" />}
           </button>
         </nav>
       </header>

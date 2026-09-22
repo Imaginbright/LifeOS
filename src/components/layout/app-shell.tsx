@@ -37,11 +37,12 @@ const navigation = [
 ];
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const { inbox, setAddKind, preferences } = useApp();
+  const { inbox, setAddKind, preferences, error, clearError, refresh, loading } = useApp();
   const unread = inbox.filter((item) => !item.read).length;
   if (path === "/privacy" || path === "/terms") {
     return <PublicSiteShell>{children}</PublicSiteShell>;
   }
+  if (path === "/login") return <>{children}</>;
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -141,6 +142,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <main id="main" className="main-content">
+          {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => { clearError(); void refresh(); }}>Try again</button></div>}
+          {loading && <div className="loading-line" role="status">Loading your space…</div>}
           {children}
           <footer className="page-footer">
             <span>Life, a little more in focus.</span>
