@@ -130,6 +130,88 @@ test("Dashboard social cards navigate to Creator while Creator cards stay inert"
   }
 });
 
+test("manual social sync refreshes Dashboard and Creator without a hard reload", async ({ page }) => {
+  test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, "E2E owner credentials are not configured");
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(process.env.E2E_EMAIL!);
+  await page.getByLabel("Password").fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const original = await page.evaluate(async () => (await fetch("/api/data", { cache: "no-store" })).json());
+  const platform = (["youtube", "tiktok"] as const).find((item) => original.connectedAccounts.some((account: { platform: string; status: string }) => account.platform === item && account.status === "connected"));
+  test.skip(!platform, "No connected creator account is available for the mocked sync test");
+  const account = original.socialAccounts.find((item: { platform: string }) => item.platform === platform);
+  const followers = account.followers + 5;
+  const refreshed = {
+    ...original,
+    socialAccounts: original.socialAccounts.map((item: { platform: string }) => item.platform === platform ? { ...item, followers, previousFollowers: account.followers, change: 5, comparisonAvailable: true, dataAvailable: true } : item),
+    socialSnapshots: [...original.socialSnapshots, { id: "mock-sync", platform, date: new Date().toISOString(), followers }],
+  };
+  await page.goto("/settings");
+  await expect(page.getByRole("button", { name: "Sync now" }).first()).toBeVisible();
+  await page.route("**/api/social/sync", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [{ provider: platform, status: "success" }] }) }));
+  await page.route("**/api/data", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(refreshed) }));
+  const response = page.waitForResponse((item) => item.url().endsWith("/api/data") && item.status() === 200);
+  await page.getByRole("button", { name: "Sync now" }).first().click();
+  await response;
+  await page.getByRole("link", { name: "Dashboard", exact: true }).first().click();
+  const expected = new Intl.NumberFormat("en-NG").format(followers);
+  await expect(page.locator("a.social-card").filter({ hasText: account.displayName }).locator(".social-value")).toHaveText(expected);
+  await page.getByRole("link", { name: "Creator", exact: true }).first().click();
+  await expect(page.locator("article.social-card").filter({ hasText: account.displayName }).locator(".social-value")).toHaveText(expected);
+});
+
+test("weekly task series keeps separate occurrences through edit, completion, skip and stop", async ({ page }) => {
+  test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, "E2E owner credentials are not configured");
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(process.env.E2E_EMAIL!);
+  await page.getByLabel("Password").fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + ((8 - date.getUTCDay()) % 7 || 7));
+  const monday = date.toISOString().slice(0, 10);
+  const title = `Shoot video ${Date.now()}`;
+  const edited = `Plan video ${Date.now()}`;
+
+  await page.goto("/tasks?view=upcoming");
+  await page.getByRole("button", { name: "Add task", exact: true }).click();
+  await page.getByLabel("Task title").fill(title);
+  await page.getByLabel("Date", { exact: true }).fill(monday);
+  await page.getByLabel("Repeat").selectOption("weekly");
+  await expect(page.getByRole("button", { name: "Monday" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("dialog").getByRole("button", { name: "Add task", exact: true }).click();
+  let rows = page.locator(".task-row").filter({ hasText: title });
+  await expect(rows.first()).toBeVisible();
+  expect(await rows.count()).toBeGreaterThan(1);
+  await page.reload();
+  rows = page.locator(".task-row").filter({ hasText: title });
+  expect(await rows.count()).toBeGreaterThan(1);
+
+  await rows.first().getByRole("button", { name: `Actions for ${title}` }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await page.getByRole("radio", { name: "This and future tasks" }).check();
+  await page.getByLabel("Task title").fill(edited);
+  await page.getByRole("dialog").getByRole("button", { name: "Save task" }).click();
+  rows = page.locator(".task-row").filter({ hasText: edited });
+  await expect(rows.first()).toBeVisible();
+  expect(await rows.count()).toBeGreaterThan(1);
+  await rows.first().getByRole("checkbox").check();
+  await expect(rows.first().getByRole("checkbox")).toBeChecked();
+  await expect(rows.nth(1).getByRole("checkbox")).not.toBeChecked();
+
+  await rows.nth(1).getByRole("button", { name: `Actions for ${edited}` }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
+  await page.getByRole("button", { name: "Skip this task" }).click();
+  expect(await rows.count()).toBeGreaterThan(1);
+  await rows.nth(1).getByRole("button", { name: `Actions for ${edited}` }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
+  await page.getByRole("radio", { name: "Stop future tasks" }).check();
+  await page.getByRole("button", { name: "Stop future tasks" }).click();
+  await page.reload();
+  await expect(page.locator(".task-row").filter({ hasText: edited })).toHaveCount(1);
+});
+
 test("authenticated changes persist after reload", async ({ page }) => {
   test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, "E2E owner credentials are not configured");
   await page.goto("/login");

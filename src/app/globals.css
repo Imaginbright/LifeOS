@@ -3325,6 +3325,27 @@ textarea {
   font-size: 11px;
   white-space: nowrap;
 }
+.recurrence-options {
+  display: grid;
+  gap: 10px;
+  border: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.recurrence-options legend, .weekday-picker legend { margin-bottom: 8px; font-weight: 600; }
+.recurrence-options > label:has(input[type="radio"]), .recurrence-delete-choice {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+}
+.recurrence-options input[type="radio"], .recurrence-delete-choice input[type="radio"] { width: auto; min-height: auto; }
+.recurrence-options small { color: var(--muted-foreground); }
+.weekday-picker { display: flex; gap: 6px; border: 0; padding: 0; }
+.weekday-picker legend { width: 100%; }
+.weekday-picker button { min-width: 32px; min-height: 32px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); }
+.weekday-picker button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+.recurrence-delete-choice { margin-top: 10px; font-size: 13px; }
 .public-header-cta {
   min-height: 38px;
   padding: 0 14px;

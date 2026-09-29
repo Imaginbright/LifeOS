@@ -12,7 +12,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!values) return badRequest("Please check the task details");
   try {
     const { id } = await params;
-    const { data, error } = await auth.supabase.from("tasks").update(values).eq("id", id).eq("user_id", auth.user.id).select().maybeSingle();
+    const { data, error } = await auth.supabase.from("tasks").update(values).eq("id", id).eq("user_id", auth.user.id).eq("skipped", false).select().maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Task not found" }, { status: 404 });
     return NextResponse.json(mapTask(data));
@@ -21,7 +21,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser(); if ("response" in auth) return auth.response;
-  try { const { id } = await params; const { data, error } = await auth.supabase.from("tasks").delete().eq("id", id).eq("user_id", auth.user.id).select("id").maybeSingle(); if (error) throw error; if (!data) return NextResponse.json({ error: "Task not found" }, { status: 404 }); return new NextResponse(null, { status: 204 }); }
+  try { const { id } = await params; const existing = await auth.supabase.from("tasks").select("recurrence_id,completed").eq("id", id).eq("user_id", auth.user.id).maybeSingle(); if (existing.error) throw existing.error; if (!existing.data) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    const result = existing.data.recurrence_id
+      ? await auth.supabase.from("tasks").update({ skipped: true }).eq("id", id).eq("user_id", auth.user.id).eq("completed", false).select("id").maybeSingle()
+      : await auth.supabase.from("tasks").delete().eq("id", id).eq("user_id", auth.user.id).select("id").maybeSingle();
+    if (result.error) throw result.error; if (!result.data) return badRequest("Completed recurring tasks are retained as history"); return new NextResponse(null, { status: 204 }); }
   catch (error) { return serverError(error); }
 }
 

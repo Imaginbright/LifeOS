@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { jsonBody } from "@/lib/api-response";
-import { safeProviderError } from "@/lib/integrations/errors";
-import { syncConnectedAccount } from "@/lib/integrations/sync";
+import { settledSyncResults, syncConnectedAccount } from "@/lib/integrations/sync";
 
 export async function POST(request: Request) {
   const auth = await requireUser(); if ("response" in auth) return auth.response;
@@ -13,7 +13,12 @@ export async function POST(request: Request) {
   const eligible = (data ?? []).filter((account) => !account.last_synced_at || Date.now() - new Date(account.last_synced_at).getTime() >= 60_000);
   if (!eligible.length) return NextResponse.json({ status: "skipped", message: "This account was synced less than a minute ago." });
   const settled = await Promise.allSettled(eligible.map((account) => syncConnectedAccount(account.id, auth.user.id)));
-  const results = settled.map((result, index) => result.status === "fulfilled" ? result.value : { provider: eligible[index].platform, status: "failed", error: safeProviderError(result.reason).code });
+  const results = settledSyncResults(eligible, settled);
+  if (results.some((result) => result.status === "success")) {
+    revalidatePath("/dashboard");
+    revalidatePath("/creator");
+    revalidatePath("/settings");
+  }
   return NextResponse.json({ results });
 }
 

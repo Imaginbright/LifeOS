@@ -29,7 +29,7 @@ export function TasksPage() {
     (task) => task.scope === "daily" && task.date === current,
   );
   const monthly = tasks.filter(
-    (task) => task.scope === "monthly" && task.date.startsWith(current.slice(0, 7)),
+    (task) => (task.scope === "monthly" || task.recurrenceId) && task.date.startsWith(current.slice(0, 7)),
   );
   const upcoming = tasks.filter(
     (task) => task.scope === "daily" && task.date > current,
@@ -76,6 +76,7 @@ export function TasksPage() {
             <TaskProgress tasks={today} />
             <TaskList tasks={today} manageable />
           </section>
+          {overdue.length > 0 && <section className="card tasks-page-card"><div className="section-title"><h2>Overdue</h2><span className="tag warning">{overdue.length} to revisit</span></div><TaskList tasks={overdue} manageable /></section>}
         </Tabs.Content>
         <Tabs.Content value="upcoming">
           <div className="upcoming-groups">

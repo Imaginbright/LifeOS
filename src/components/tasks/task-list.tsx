@@ -1,10 +1,12 @@
 "use client";
-import { Check } from "lucide-react";
+import { Check, Repeat2 } from "lucide-react";
 import { useApp } from "@/components/shared/app-provider";
 import { EmptyState, Progress } from "@/components/shared/primitives";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { EntityActions } from "@/components/shared/entity-actions";
+import { recurrenceDescription, isOverdue } from "@/lib/task-recurrence";
+import { todayDate } from "@/lib/date";
 export function TaskProgress({ tasks }: { tasks: Task[] }) {
   const completed = tasks.filter((task) => task.completed).length;
   const value = tasks.length ? (completed / tasks.length) * 100 : 0;
@@ -22,7 +24,7 @@ export function TaskProgress({ tasks }: { tasks: Task[] }) {
   );
 }
 export function TaskRow({ task, manageable = false }: { task: Task; manageable?: boolean }) {
-  const { toggleTask, setEditingTask, deleteTask } = useApp();
+  const { toggleTask, setEditingTask, deleteTask, stopTaskSeries } = useApp();
   return (
     <div className={cn("task-row", task.completed && "completed")}>
       <label className="task-check">
@@ -36,13 +38,13 @@ export function TaskRow({ task, manageable = false }: { task: Task; manageable?:
       </label>
       <div className="task-name">
         <span>{task.title}</span>
-        <small>{task.category}</small>
+        <small>{task.category}{task.recurrence && <> · <Repeat2 size={12} aria-hidden="true" /> {recurrenceDescription(task.recurrence)}</>}{isOverdue(task, todayDate()) && <> · Overdue</>}</small>
       </div>
       <span className={`priority ${task.priority.toLowerCase()}`}>
         <i />
         {task.priority}
       </span>
-      {manageable && <EntityActions kind="task" name={task.title} onEdit={() => setEditingTask(task)} onDelete={() => deleteTask(task.id)} />}
+      {manageable && <EntityActions kind="task" name={task.title} onEdit={() => setEditingTask(task)} onDelete={() => deleteTask(task.id)} onStopFuture={task.recurrenceId ? () => stopTaskSeries(task.recurrenceId!, task.occurrenceDate ?? task.date) : undefined} canSkip={!task.completed} />}
     </div>
   );
 }

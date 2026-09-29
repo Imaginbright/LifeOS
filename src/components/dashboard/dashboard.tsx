@@ -22,7 +22,7 @@ export function Dashboard() {
     useApp();
   const today = todayDate();
   const todayTasks = tasks.filter(
-    (task) => task.date === today && task.scope === "daily",
+    (task) => task.scope === "daily" && (task.date === today || (task.date < today && !task.completed)),
   );
   const totals = subscriptionTotals(subscriptions, preferences.currency);
   const next = nextRenewals(subscriptions, today)[0];

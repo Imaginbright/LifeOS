@@ -4,6 +4,9 @@ import { crossedFollowerMilestones, followerDelta } from "../src/lib/integration
 import { shouldRefreshToken } from "../src/lib/integrations/token-utils";
 import { validOAuthState } from "../src/lib/integrations/oauth-state-utils";
 import { dedupeInboxEvents, renewalEventKey } from "../src/lib/inbox-rules";
+import { snapshotValues } from "../src/lib/integrations/persist";
+import { settledSyncResults } from "../src/lib/integrations/sync";
+import { ProviderError } from "../src/lib/integrations/errors";
 
 test("follower deltas distinguish missing history from a real zero change", () => {
   assert.deepEqual(followerDelta(120, null), { change: null, percentage: null });
@@ -34,5 +37,18 @@ test("inbox rules create deterministic keys and remove duplicate events", () => 
   const key = renewalEventKey("subscription", "2026-09-28");
   assert.equal(key, "lifeos:subscription-renewal:subscription:2026-09-28");
   assert.deepEqual(dedupeInboxEvents([{ source_key: key, value: 1 }, { source_key: key, value: 2 }]), [{ source_key: key, value: 2 }]);
+});
+
+test("Instagram sync snapshots use normalized follower and media counts", () => {
+  const row = snapshotValues("owner", "account", { provider: "instagram", providerUserId: "ig-1", displayName: "Bright", username: "bright", avatarUrl: null, followers: 2692, following: null, likes: null, videos: 48 }, "2026-09-29T08:00:00.000Z");
+  assert.deepEqual(row, { connected_account_id: "account", user_id: "owner", provider: "instagram", followers: 2692, following: null, likes: null, videos: 48, captured_at: "2026-09-29T08:00:00.000Z" });
+});
+
+test("one provider failure does not replace successful sync results", () => {
+  const results = settledSyncResults([{ platform: "youtube" }, { platform: "instagram" }], [
+    { status: "fulfilled", value: { provider: "youtube", status: "success" } },
+    { status: "rejected", reason: new ProviderError("provider_unavailable") },
+  ]);
+  assert.deepEqual(results, [{ provider: "youtube", status: "success" }, { provider: "instagram", status: "failed", error: "provider_unavailable" }]);
 });
 

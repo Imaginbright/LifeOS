@@ -28,6 +28,8 @@ npx supabase gen types typescript --linked --schema public > src/lib/database.ty
 
 The checked-in database types are generated from the linked schema. Do not edit them by hand.
 
+Recurring tasks use a series in `task_recurrences` and separate dated rows in `tasks`. The app creates only a rolling window of occurrences (30 days back and 60 days ahead); unresolved older rows remain visible. Skipping one occurrence keeps a hidden record so the same date is not regenerated. Monthly rules use the final valid day in shorter months: a rule set for the 31st falls on February 28, or February 29 in a leap year.
+
 ## Authentication and routes
 
 `/`, `/login`, `/privacy`, and `/terms` are public. The landing page explains LifeOS to visitors; signed-in visitors see an Open dashboard link. Sign-in sends the owner to `/dashboard`. The Next.js 16 `proxy.ts` session layer protects `/dashboard` and the other personal routes and refreshes Supabase auth cookies. Every mutation route also validates the user and relies on RLS and explicit server-side ownership checks.

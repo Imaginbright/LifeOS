@@ -3,6 +3,8 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { NormalizedSocialStats, ProviderTokens } from "./types";
 
+export const snapshotValues = (userId: string, accountId: string, stats: NormalizedSocialStats, capturedAt: string) => ({ connected_account_id: accountId, user_id: userId, provider: stats.provider, followers: stats.followers, following: stats.following, likes: stats.likes, videos: stats.videos, captured_at: capturedAt });
+
 export async function saveConnection(userId: string, stats: NormalizedSocialStats, tokens: ProviderTokens, scopes: string[], environment: "sandbox" | "production" | null) {
   const admin = createAdminClient(); const now = new Date().toISOString();
   const { data: account, error } = await admin.from("connected_accounts").upsert({ user_id: userId, platform: stats.provider, external_account_id: stats.providerUserId, display_name: stats.displayName || stats.provider, username: stats.username, avatar_url: stats.avatarUrl, status: "connected", granted_scopes: scopes, environment, connected_at: now, disconnected_at: null, last_synced_at: now, last_error: null }, { onConflict: "user_id,platform" }).select().single();
@@ -12,7 +14,7 @@ export async function saveConnection(userId: string, stats: NormalizedSocialStat
     await admin.from("connected_accounts").update({ status: "error", last_error: "Credentials could not be stored securely." }).eq("id", account.id);
     throw tokenError;
   }
-  const { error: snapshotError } = await admin.from("social_snapshots").insert({ connected_account_id: account.id, user_id: userId, provider: stats.provider, followers: stats.followers, following: stats.following, likes: stats.likes, videos: stats.videos, captured_at: now });
+  const { error: snapshotError } = await admin.from("social_snapshots").insert(snapshotValues(userId, account.id, stats, now));
   if (snapshotError) {
     await admin.from("connected_accounts").update({ status: "error", last_error: "The first statistics snapshot could not be saved." }).eq("id", account.id);
     throw snapshotError;

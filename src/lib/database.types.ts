@@ -438,6 +438,68 @@ export type Database = {
           },
         ]
       }
+      task_recurrences: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          day_of_month: number | null
+          ends_on: string | null
+          frequency: string
+          id: string
+          interval_count: number
+          notes: string
+          priority: string
+          starts_on: string
+          title: string
+          updated_at: string
+          user_id: string
+          weekdays: number[]
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          day_of_month?: number | null
+          ends_on?: string | null
+          frequency: string
+          id?: string
+          interval_count?: number
+          notes?: string
+          priority?: string
+          starts_on: string
+          title: string
+          updated_at?: string
+          user_id?: string
+          weekdays?: number[]
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          day_of_month?: number | null
+          ends_on?: string | null
+          frequency?: string
+          id?: string
+          interval_count?: number
+          notes?: string
+          priority?: string
+          starts_on?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_recurrences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           category: string
@@ -447,9 +509,12 @@ export type Database = {
           due_date: string | null
           id: string
           notes: string | null
+          occurrence_date: string | null
           period_month: string | null
           priority: string
+          recurrence_id: string | null
           scope: string
+          skipped: boolean
           title: string
           updated_at: string
           user_id: string
@@ -462,9 +527,12 @@ export type Database = {
           due_date?: string | null
           id?: string
           notes?: string | null
+          occurrence_date?: string | null
           period_month?: string | null
           priority?: string
+          recurrence_id?: string | null
           scope?: string
+          skipped?: boolean
           title: string
           updated_at?: string
           user_id?: string
@@ -477,14 +545,24 @@ export type Database = {
           due_date?: string | null
           id?: string
           notes?: string | null
+          occurrence_date?: string | null
           period_month?: string | null
           priority?: string
+          recurrence_id?: string | null
           scope?: string
+          skipped?: boolean
           title?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_recurrence_owner_fkey"
+            columns: ["recurrence_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_recurrences"
+            referencedColumns: ["id", "user_id"]
+          },
           {
             foreignKeyName: "tasks_user_id_fkey"
             columns: ["user_id"]

@@ -5,6 +5,8 @@ import { fetchTikTokStats } from "../src/lib/integrations/tiktok/client";
 import { ProviderError } from "../src/lib/integrations/errors";
 import { exchangeYouTubeCode, refreshYouTubeToken } from "../src/lib/integrations/youtube/oauth";
 import { exchangeTikTokCode } from "../src/lib/integrations/tiktok/oauth";
+import { fetchInstagramStats } from "../src/lib/integrations/instagram/client";
+import { exchangeInstagramCode, instagramAuthorizationUrl, instagramScope, refreshInstagramToken } from "../src/lib/integrations/instagram/oauth";
 
 const jsonFetch = (body: unknown, status = 200) => (async () => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } })) as typeof fetch;
 
@@ -43,4 +45,47 @@ test("TikTok token exchange parses rotating token metadata", async () => {
   const fetcher = jsonFetch({ access_token: "access", refresh_token: "rotated", expires_in: 86400, refresh_expires_in: 31536000, token_type: "Bearer", scope: "user.info.basic,user.info.stats" });
   const tokens = await exchangeTikTokCode("code", fetcher);
   assert.equal(tokens.refreshToken, "rotated"); assert.equal(tokens.scope, "user.info.basic,user.info.stats"); assert.ok(tokens.refreshTokenExpiresAt);
+});
+
+test("Instagram Login authorization requests only business basic", () => {
+  process.env.INSTAGRAM_CLIENT_ID = "instagram-client"; process.env.INSTAGRAM_CLIENT_SECRET = "instagram-secret"; process.env.NEXT_PUBLIC_APP_URL = "https://lifeos-navy-six.vercel.app";
+  const url = instagramAuthorizationUrl("safe-state");
+  assert.equal(url.origin, "https://www.instagram.com");
+  assert.equal(url.pathname, "/oauth/authorize");
+  assert.equal(url.searchParams.get("scope"), instagramScope);
+  assert.equal(url.searchParams.get("scope"), "instagram_business_basic");
+  assert.equal(url.searchParams.get("enable_fb_login"), "0");
+  assert.equal(url.searchParams.get("state"), "safe-state");
+});
+
+test("Instagram code exchange stores a parsed long-lived token", async () => {
+  process.env.INSTAGRAM_CLIENT_ID = "instagram-client"; process.env.INSTAGRAM_CLIENT_SECRET = "instagram-secret"; process.env.NEXT_PUBLIC_APP_URL = "https://lifeos-navy-six.vercel.app";
+  const requests: Array<{ url: string; init?: RequestInit }> = [];
+  const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
+    requests.push({ url: String(input), init });
+    return requests.length === 1 ? new Response(JSON.stringify({ access_token: "short-token", user_id: 123 }), { status: 200, headers: { "Content-Type": "application/json" } }) : new Response(JSON.stringify({ access_token: "long-token", token_type: "bearer", expires_in: 5_184_000 }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+  const tokens = await exchangeInstagramCode("auth-code", fetcher);
+  assert.equal(tokens.accessToken, "long-token");
+  assert.equal(tokens.refreshToken, "long-token");
+  assert.equal(tokens.scope, "instagram_business_basic");
+  assert.ok(tokens.accessTokenExpiresAt);
+  assert.match(String(requests[0].init?.body), /grant_type=authorization_code/);
+  assert.match(requests[1].url, /grant_type=ig_exchange_token/);
+  assert.doesNotMatch(requests[1].url, /client_id/);
+});
+
+test("Instagram profile fields normalize followers and media counts", async () => {
+  let requested = "";
+  const fetcher = (async (input: string | URL | Request) => { requested = String(input); return new Response(JSON.stringify({ id: "ig-1", username: "bright", name: "Bright", profile_picture_url: "https://example.com/ig.jpg", followers_count: 2692, media_count: 48 }), { status: 200, headers: { "Content-Type": "application/json" } }); }) as typeof fetch;
+  const stats = await fetchInstagramStats("token", fetcher);
+  assert.match(requested, /followers_count/); assert.match(requested, /media_count/);
+  assert.deepEqual(stats, { provider: "instagram", providerUserId: "ig-1", displayName: "Bright", username: "bright", avatarUrl: "https://example.com/ig.jpg", followers: 2692, following: null, likes: null, videos: 48 });
+});
+
+test("Instagram long-lived token refresh parses its replacement token", async () => {
+  const tokens = await refreshInstagramToken("old-token", jsonFetch({ access_token: "new-token", token_type: "bearer", expires_in: 5_184_000 }));
+  assert.equal(tokens.accessToken, "new-token");
+  assert.equal(tokens.refreshToken, "new-token");
+  assert.ok(tokens.accessTokenExpiresAt);
 });

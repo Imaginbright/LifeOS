@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { format, parseISO, subDays } from "date-fns";
 import { number } from "@/lib/utils";
@@ -9,13 +9,12 @@ import type { Platform, SocialAccount, SocialSnapshot } from "@/lib/types";
 const periods = { "7D": 7, "30D": 30, "3M": 90, "6M": 180, "1Y": 365 };
 const colors: Record<Platform, string> = { tiktok: "#245B3D", instagram: "#a58baf", youtube: "#c69b66" };
 
-export function AudienceChart({ accounts, snapshots }: { accounts: SocialAccount[]; snapshots: SocialSnapshot[] }) {
-  const [period, setPeriod] = useState<keyof typeof periods>("30D");
+export function AudienceChart({ accounts, snapshots, period, setPeriod }: { accounts: SocialAccount[]; snapshots: SocialSnapshot[]; period: keyof typeof periods; setPeriod: Dispatch<SetStateAction<keyof typeof periods>> }) {
   const available = [...new Set(snapshots.map((item) => item.platform))];
-  const [visible, setVisible] = useState<Platform[]>(["tiktok", "instagram", "youtube"]);
+  const [visible, setVisible] = useState<Platform[]>(["youtube", "tiktok", "instagram"]);
   const data = useMemo(() => {
     const cutoff = subDays(new Date(), periods[period]);
-    const filtered = snapshots.filter((item) => new Date(item.date) >= cutoff);
+    const filtered = snapshots.filter((item) => new Date(item.date) >= cutoff).sort((a, b) => a.date.localeCompare(b.date) || (a.id ?? "").localeCompare(b.id ?? ""));
     const dates = [...new Set(filtered.map((item) => item.date.slice(0, 10)))].sort();
     return dates.map((date) => ({ date, ...Object.fromEntries(filtered.filter((item) => item.date.startsWith(date)).map((item) => [item.platform, item.followers])) }));
   }, [period, snapshots]);

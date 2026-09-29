@@ -16,6 +16,7 @@ export type SocialAccount = {
   message?: string;
 };
 export type SocialSnapshot = {
+  id?: string;
   platform: Platform;
   date: string;
   followers: number;
@@ -44,6 +45,19 @@ export type Task = {
   priority: "Low" | "Medium" | "High";
   category: Category;
   scope: "daily" | "monthly";
+  recurrenceId?: string;
+  occurrenceDate?: string;
+  recurrence?: TaskRecurrence;
+};
+export type TaskRecurrence = {
+  id: string;
+  frequency: "daily" | "weekly" | "monthly";
+  interval: number;
+  weekdays: number[];
+  dayOfMonth: number | null;
+  startsOn: string;
+  endsOn: string | null;
+  active: boolean;
 };
 export type Goal = {
   id: string;
@@ -104,6 +118,7 @@ export type Preferences = {
 
 export type AppData = {
   tasks: Task[];
+  recurrenceAvailable?: boolean;
   goals: Goal[];
   subscriptions: Subscription[];
   inbox: InboxItem[];

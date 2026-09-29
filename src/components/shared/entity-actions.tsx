@@ -11,21 +11,26 @@ export function EntityActions({
   name,
   onEdit,
   onDelete,
+  onStopFuture,
+  canSkip = true,
 }: {
   kind: "task" | "goal";
   name: string;
   onEdit: () => void;
   onDelete: () => Promise<unknown>;
+  onStopFuture?: () => Promise<unknown>;
+  canSkip?: boolean;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [stopFuture, setStopFuture] = useState(false);
   const { error, clearError } = useApp();
   const label = kind === "task" ? "task" : "goal";
   const remove = async () => {
     if (deleting) return;
     setDeleting(true);
     try {
-      if (await onDelete()) setConfirming(false);
+      if (await (stopFuture ? onStopFuture?.() : onDelete())) setConfirming(false);
     } finally {
       setDeleting(false);
     }
@@ -44,16 +49,18 @@ export function EntityActions({
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      <Dialog.Root open={confirming} onOpenChange={(open) => { if (!deleting) setConfirming(open); }}>
+      <Dialog.Root open={confirming} onOpenChange={(open) => { if (!deleting) { setConfirming(open); if (!open) setStopFuture(false); } }}>
         <Dialog.Portal>
           <Dialog.Overlay className="dialog-overlay" />
           <Dialog.Content className="dialog-content confirm-content">
-            <Dialog.Title>Delete {label}?</Dialog.Title>
-            <Dialog.Description>{kind === "task" ? "This task will be permanently removed." : "This will permanently remove the goal and its progress history."}</Dialog.Description>
+            <Dialog.Title>{onStopFuture ? "Manage recurring task" : `Delete ${label}?`}</Dialog.Title>
+            <Dialog.Description>{onStopFuture ? "Skip this occurrence or stop the future schedule. Completed history stays saved." : kind === "task" ? "This task will be permanently removed." : "This will permanently remove the goal and its progress history."}</Dialog.Description>
+            {onStopFuture && <label className="recurrence-delete-choice"><input type="radio" name="deleteScope" checked={!stopFuture} disabled={!canSkip} onChange={() => setStopFuture(false)} /> Skip this occurrence</label>}
+            {onStopFuture && <label className="recurrence-delete-choice"><input type="radio" name="deleteScope" checked={stopFuture} onChange={() => setStopFuture(true)} /> Stop future tasks</label>}
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="form-actions">
               <Dialog.Close className="button secondary" disabled={deleting}>Cancel</Dialog.Close>
-              <button className="button destructive-button" disabled={deleting} onClick={() => void remove()}>{deleting ? "Deleting…" : `Delete ${label}`}</button>
+              <button className="button destructive-button" disabled={deleting || (onStopFuture && !canSkip && !stopFuture)} onClick={() => void remove()}>{deleting ? "Deleting…" : onStopFuture ? stopFuture ? "Stop future tasks" : "Skip this task" : `Delete ${label}`}</button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

@@ -3,9 +3,11 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { PlatformIcon } from "@/components/shared/platform-icon";
 import type { SocialAccount } from "@/lib/types";
 import { number } from "@/lib/utils";
-export function SocialMetricCard({ account, href }: { account: SocialAccount; href?: string }) {
-  const positive = account.change >= 0;
-  const connected = account.status === "connected";
+import type { FollowerComparison } from "@/lib/social-history";
+export function SocialMetricCard({ account, href, comparison }: { account: SocialAccount; href?: string; comparison?: FollowerComparison }) {
+  const shown = comparison === undefined ? account.comparisonAvailable ? { change: account.change, label: "since last sync" } : null : comparison;
+  const positive = (shown?.change ?? 0) >= 0;
+  const connected = account.status === "connected" || account.status === "token_expired" || account.status === "error";
   const values = account.trend ?? [];
   const sparkline = values.length > 1 ? values.map((value, index) => {
     const min = Math.min(...values), max = Math.max(...values), range = max - min || 1;
@@ -25,13 +27,11 @@ export function SocialMetricCard({ account, href }: { account: SocialAccount; hr
       <div className="social-value">{connected ? account.dataAvailable ? number(account.followers) : "Unavailable" : account.status === "needs_setup" ? "Needs setup" : "Not connected"}</div>
       <div className="social-label">{connected ? account.metricLabel : account.message ?? "Connect →"}</div>
       <div className="social-bottom">
-        {connected && account.comparisonAvailable ? <span className={positive ? "change positive" : "change negative"}>
-          {positive ? <ArrowUpRight size={15} /> : <ArrowDownRight size={15} />}
-          {positive ? "+" : "−"}
-          {number(Math.abs(account.change))}
-          <span>this week</span>
+        {connected && shown ? <span className={shown.change === 0 ? "change" : positive ? "change positive" : "change negative"}>
+          {shown.change === 0 ? "No change" : <>{positive ? <ArrowUpRight size={15} /> : <ArrowDownRight size={15} />}{number(Math.abs(shown.change))}</>}
+          <span>{shown.label}</span>
         </span> : <span className="change">{connected ? "No comparison yet" : "Connect →"}</span>}
-        {connected && account.comparisonAvailable && sparkline && <svg
+        {connected && shown && sparkline && <svg
           className={positive ? "sparkline" : "sparkline negative"}
           viewBox="0 0 100 32"
           aria-hidden="true"

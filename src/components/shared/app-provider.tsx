@@ -8,7 +8,7 @@ import { removeEntity, replaceEntity } from "@/lib/entity-state";
 
 export type AddKind = "menu" | "task" | "goal" | "subscription" | null;
 const defaults: AppData = {
-  tasks: [], goals: [], subscriptions: [], inbox: [], socialAccounts: [], socialSnapshots: [], connectedAccounts: [],
+  tasks: [], recurrenceAvailable: false, goals: [], subscriptions: [], inbox: [], socialAccounts: [], socialSnapshots: [], connectedAccounts: [],
   preferences: { appearance: "light", currency: "NGN", startOfWeek: "monday", notifications: true, name: "You", timezone: "Africa/Lagos" },
 };
 
@@ -140,6 +140,18 @@ function useAppState() {
       const saved = await api<Task>("/api/tasks", { method: "POST", body: JSON.stringify(task) });
       setData((current) => ({ ...current, tasks: [...current.tasks, saved] })); return saved;
     }, "Task added"),
+    addTaskSeries: (values: Record<string, unknown>) => mutate(async () => {
+      const saved = await api<{ id: string }>("/api/task-recurrences", { method: "POST", body: JSON.stringify(values) });
+      await refresh(); return saved;
+    }, "Recurring task added"),
+    editTaskSeries: (id: string, values: Record<string, unknown>) => mutate(async () => {
+      const saved = await api<{ id: string }>(`/api/task-recurrences/${id}`, { method: "PATCH", body: JSON.stringify(values) });
+      await refresh(); return saved;
+    }, "Recurring tasks updated"),
+    stopTaskSeries: (id: string, from: string) => mutate(async () => {
+      await api(`/api/task-recurrences/${id}?from=${encodeURIComponent(from)}`, { method: "DELETE" });
+      await refresh(); return { ok: true };
+    }, "Future tasks stopped"),
     editTask: (id: string, changes: Omit<Task, "id" | "completed">) => mutate(async () => {
       const saved = await api<Task>(`/api/tasks/${id}`, { method: "PATCH", body: JSON.stringify(changes) });
       setData((current) => ({ ...current, tasks: replaceEntity(current.tasks, saved) }));

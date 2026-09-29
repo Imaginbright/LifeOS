@@ -16,16 +16,23 @@ import { useApp } from "./app-provider";
 import { todayDate } from "@/lib/date";
 import { addDays, addMonths, format } from "date-fns";
 import type { Category, Currency, Subscription, Task } from "@/lib/types";
+import { recurrenceDescription, type Frequency } from "@/lib/task-recurrence";
 export function QuickAdd() {
   const app = useApp();
   const returnFocus = useRef<HTMLElement | null>(null);
   const [cycle, setCycle] = useState<Subscription["billingCycle"]>("monthly");
+  const [repeat, setRepeat] = useState<Frequency | "none">("none");
+  const [weekdays, setWeekdays] = useState<number[]>([]);
+  const [editScope, setEditScope] = useState<"one" | "series">("one");
   const open = app.addKind !== null || app.editingGoal !== null || app.editingTask !== null;
   const close = () => {
     app.setAddKind(null);
     app.setEditingGoal(null);
     app.setEditingTask(null);
     setCycle("monthly");
+    setRepeat("none");
+    setWeekdays([]);
+    setEditScope("one");
   };
   const title = app.editingGoal
     ? "Edit your goal."
@@ -54,9 +61,15 @@ export function QuickAdd() {
         priority: str("priority") as Task["priority"],
         scope: str("scope") as Task["scope"],
       };
-      saved = app.editingTask
-        ? await app.editTask(app.editingTask.id, task)
-        : await app.addTask({ ...task, completed: false });
+      const interval = num("interval");
+      const rule = { ...task, frequency: repeat, interval, weekdays: repeat === "weekly" ? weekdays : [], dayOfMonth: repeat === "monthly" ? Number(task.date.slice(8, 10)) : null, startsOn: task.date, endsOn: str("endsOn") || null };
+      saved = app.editingTask?.recurrenceId && editScope === "series"
+        ? await app.editTaskSeries(app.editingTask.recurrenceId, { ...rule, from: app.editingTask.occurrenceDate })
+        : app.editingTask
+          ? await app.editTask(app.editingTask.id, task)
+          : repeat !== "none"
+            ? await app.addTaskSeries(rule)
+            : await app.addTask({ ...task, completed: false });
     } else if (app.editingGoal || app.addKind === "goal") {
       const goal = {
         title: str("title").trim(),
@@ -219,13 +232,13 @@ export function QuickAdd() {
                         required
                       />
                     </label>
-                    <label>
+                    {(repeat === "none" || app.editingTask) && <label>
                       Plan
-                      <select name="scope" defaultValue={app.editingTask?.scope ?? "daily"}>
+                      <select name="scope" defaultValue={app.editingTask?.scope ?? "daily"} disabled={Boolean(app.editingTask?.recurrence && editScope === "series")}>
                         <option value="daily">Daily task</option>
                         <option value="monthly">Monthly task</option>
                       </select>
-                    </label>
+                    </label>}
                     <label>
                       Priority
                       <select name="priority" defaultValue={app.editingTask?.priority ?? "Medium"}>
@@ -250,6 +263,29 @@ export function QuickAdd() {
                       </select>
                     </label>
                   </div>
+                  {app.editingTask?.recurrence && (
+                    <fieldset className="recurrence-options">
+                      <legend>Apply changes</legend>
+                      <label><input type="radio" name="editScope" checked={editScope === "one"} onChange={() => setEditScope("one")} /> This task</label>
+                      <label><input type="radio" name="editScope" checked={editScope === "series"} onChange={() => { setEditScope("series"); setRepeat(app.editingTask!.recurrence!.frequency); setWeekdays(app.editingTask!.recurrence!.weekdays); }} /> This and future tasks</label>
+                      <small>{recurrenceDescription(app.editingTask.recurrence)}</small>
+                    </fieldset>
+                  )}
+                  {(!app.editingTask || (app.editingTask.recurrence && editScope === "series")) && (
+                    <div className="recurrence-options">
+                      <label>Repeat
+                        <select aria-label="Repeat" value={repeat} disabled={!app.recurrenceAvailable} onChange={(event) => { const value = event.target.value as Frequency | "none"; setRepeat(value); if (value === "weekly" && !weekdays.length) { const date = (event.currentTarget.form?.elements.namedItem("date") as HTMLInputElement)?.value || todayDate(); const day = new Date(`${date}T00:00:00`).getDay() || 7; setWeekdays([day]); } }}>
+                          <option value="none" disabled={Boolean(app.editingTask?.recurrence)}>Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
+                        </select>
+                      </label>
+                      {!app.recurrenceAvailable && <small>Repeating tasks will be available after the database update.</small>}
+                      {repeat !== "none" && <>
+                        <label>Every <input name="interval" type="number" min="1" max="365" defaultValue={app.editingTask?.recurrence?.interval ?? 1} required /> {repeat === "daily" ? "day(s)" : repeat === "weekly" ? "week(s)" : "month(s)"}</label>
+                        {repeat === "weekly" && <fieldset className="weekday-picker"><legend>On</legend>{["M", "T", "W", "T", "F", "S", "S"].map((label, index) => <button key={index} type="button" aria-label={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][index]} aria-pressed={weekdays.includes(index + 1)} onClick={() => setWeekdays((current) => current.includes(index + 1) ? current.filter((day) => day !== index + 1) : [...current, index + 1].sort())}>{label}</button>)}</fieldset>}
+                        <label>End (optional) <input name="endsOn" type="date" defaultValue={app.editingTask?.recurrence?.endsOn ?? ""} /><small>Leave blank to keep repeating.</small></label>
+                      </>}
+                    </div>
+                  )}
                 </>
               ) : app.editingGoal || app.addKind === "goal" ? (
                 <>

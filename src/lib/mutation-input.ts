@@ -1,7 +1,7 @@
 import type { Category, Goal, Task } from "@/lib/types";
 
 const taskCategories: Category[] = ["Content", "Development", "Personal", "Admin", "Health", "Other"];
-const isDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+export const isDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 const text = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
 
 export function taskWrite(body: Record<string, unknown>) {
@@ -35,3 +35,22 @@ export function goalWrite(body: Record<string, unknown>) {
 }
 
 export const needsGoalCheckin = (previous: number, next: number) => previous !== next;
+
+export function recurrenceWrite(body: Record<string, unknown>) {
+  const startsOn = body.startsOn;
+  const endsOn = body.endsOn || null;
+  const task = taskWrite({ ...body, scope: "daily", date: startsOn });
+  const frequency = body.frequency;
+  const interval = Number(body.interval ?? 1);
+  const weekdays = Array.isArray(body.weekdays) ? body.weekdays.map(Number) : [];
+  const dayOfMonth = frequency === "monthly" ? Number(body.dayOfMonth) : null;
+  if (!task || !["daily", "weekly", "monthly"].includes(String(frequency)) || !Number.isInteger(interval) || interval < 1 || interval > 365 || (endsOn !== null && (!isDate(endsOn) || endsOn < String(startsOn)))) return null;
+  if (frequency === "weekly" && (!weekdays.length || new Set(weekdays).size !== weekdays.length || weekdays.some((day) => !Number.isInteger(day) || day < 1 || day > 7))) return null;
+  if (frequency === "monthly" && (!Number.isInteger(dayOfMonth) || dayOfMonth! < 1 || dayOfMonth! > 31)) return null;
+  return {
+    title: task.title, notes: task.notes, priority: task.priority, category: task.category,
+    frequency: frequency as "daily" | "weekly" | "monthly", interval_count: interval,
+    weekdays: frequency === "weekly" ? weekdays : [], day_of_month: dayOfMonth,
+    starts_on: startsOn as string, ends_on: endsOn as string | null,
+  };
+}
