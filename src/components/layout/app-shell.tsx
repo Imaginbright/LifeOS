@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Leaf,
   Sun,
+  ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/components/shared/app-provider";
@@ -37,6 +38,12 @@ const navigation = [
 ];
 export function AppShell({ children, signedIn }: { children: ReactNode; signedIn: boolean }) {
   const path = usePathname();
+  const scriptsPath = path === "/scripts" || path.startsWith("/scripts/");
+  const scriptPage =
+    path === "/scripts" ? "Scripts" :
+      path === "/scripts/youtube" || path.startsWith("/scripts/youtube/") ? "YouTube" :
+        path === "/scripts/shorts" || path.startsWith("/scripts/shorts/") ? "Shorts" :
+          path === "/scripts/blog" || path.startsWith("/scripts/blog/") ? "Blog" : "Writing";
   const { inbox, setAddKind, preferences, error, clearError, refresh, loading } = useApp();
   const unread = inbox.filter((item) => !item.read).length;
   if (path === "/" || path === "/privacy" || path === "/terms") {
@@ -107,16 +114,17 @@ export function AppShell({ children, signedIn }: { children: ReactNode; signedIn
             My space<span>/</span>
             <strong>
               {navigation.find((item) => item.href === path)?.label ??
-                "Settings"}
+                (scriptsPath ? scriptPage : "Settings")}
             </strong>
           </div>
           <Link href="/dashboard" className="mobile-wordmark">
             LifeOS.
           </Link>
           <div className="top-actions">
-            <span className="demo-label">
-              <span /> Personal workspace
-            </span>
+            <Link href="/scripts" className={cn("workspace-link", scriptsPath && "active")} aria-current={scriptsPath ? "page" : undefined}>
+              Scripts
+              <ArrowUpRight size={14} strokeWidth={1.7} />
+            </Link>
             <button
               className="icon-button desktop-add"
               aria-label="Quick add"

@@ -1,4 +1,7 @@
 export type Platform = "tiktok" | "instagram" | "youtube";
+export type ScriptType = "longform" | "shorts" | "blog";
+export type ScriptStatus = "draft" | "published" | "archived";
+export type ScriptDraft = { id: string; title: string; type: ScriptType; status: ScriptStatus; updated_at: string };
 export type SocialAccount = {
   id: string;
   platform: Platform;
