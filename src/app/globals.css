@@ -3897,13 +3897,13 @@ textarea {
   .today-card {
     order: 0;
   }
-  .inbox-preview-card {
+  .goals-preview-card {
     order: 1;
   }
-  .goals-preview-card {
+  .subscriptions-preview-card {
     order: 2;
   }
-  .subscriptions-preview-card {
+  .inbox-preview-card {
     order: 3;
   }
   .section-title h2 {
