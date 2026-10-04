@@ -2335,7 +2335,7 @@ textarea {
   max-width: 760px;
   margin: 8px auto 70px;
 }
-.script-editor-document textarea {
+.script-blog-editor textarea {
   display: block;
   width: 100%;
   min-height: 360px;
@@ -2350,10 +2350,10 @@ textarea {
   line-height: 1.9;
   white-space: pre-wrap;
 }
-.script-editor-document textarea:focus-visible {
+.script-blog-editor textarea:focus-visible {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 24%, transparent);
 }
-.script-editor-document textarea::placeholder {
+.script-blog-editor textarea::placeholder {
   color: var(--muted-foreground);
 }
 .script-editor-document .script-writing-hint {
@@ -3163,7 +3163,7 @@ textarea {
   .script-editor-document {
     margin-top: 0;
   }
-  .script-editor-document textarea {
+  .script-blog-editor textarea {
     height: min(68svh, 720px);
     min-height: min(360px, 68svh);
     max-height: none;
@@ -3203,6 +3203,159 @@ textarea {
   .script-mode-footer > svg,
   .workspace-link {
     transition: none;
+  }
+}
+.script-section-editor {
+  max-width: 760px;
+  margin: 0 auto 42px;
+}
+.script-editable-section {
+  padding: 15px 0 18px;
+}
+.script-editable-section > header {
+  align-items: center;
+}
+.script-editable-section h2 {
+  flex: 1;
+  min-width: 0;
+}
+.script-editable-section h2 input {
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.script-editable-section h2 input:focus-visible {
+  box-shadow: 0 2px 0 var(--primary);
+}
+.script-remove-section,
+.script-add-section {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.script-remove-section {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+}
+.script-remove-section:hover,
+.script-remove-section:focus-visible {
+  color: var(--danger, #a44b43);
+  background: var(--soft);
+}
+.script-section-visuals,
+.script-section-body {
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  resize: vertical;
+}
+.script-section-visuals {
+  width: calc(100% - 28px);
+  min-height: 34px !important;
+  margin: 8px 0 2px 28px !important;
+  padding: 4px 8px !important;
+  border-left: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+.script-section-body {
+  height: 220px;
+  min-height: 180px !important;
+  margin-top: 7px !important;
+  padding: 4px 0 !important;
+  font-size: 15px !important;
+  line-height: 1.85 !important;
+}
+.script-section-visuals:focus-visible,
+.script-section-body:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 24%, transparent);
+  border-radius: 3px;
+}
+.script-section-visuals::placeholder,
+.script-section-body::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.75;
+}
+.script-add-section {
+  margin-top: 13px;
+  padding: 7px 0;
+  color: var(--primary);
+  font-size: 12px;
+}
+.script-add-section:hover {
+  color: var(--foreground);
+}
+.script-blog-source {
+  max-width: 850px;
+  margin: 8px auto 52px;
+  color: var(--foreground);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.script-blog-source code {
+  font: inherit;
+}
+.script-blog-editor textarea {
+  height: min(72vh, 850px);
+  min-height: 380px;
+  overflow: auto;
+  resize: vertical;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 14px;
+  line-height: 1.75;
+}
+.script-template-form-simple .script-raw-mdx-input {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  line-height: 1.7;
+  tab-size: 2;
+}
+@media (max-width: 600px) {
+  .script-editable-section {
+    padding: 14px 0 16px;
+  }
+  .script-editable-section h2 input {
+    font-size: 17px;
+  }
+  .script-section-visuals {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  .script-section-body {
+    height: 200px;
+    min-height: 160px !important;
+  }
+  .script-blog-editor textarea {
+    height: min(68svh, 720px);
+    min-height: min(360px, 68svh);
+    max-height: none;
+    overscroll-behavior: contain;
+    font-size: 13px;
+  }
+  .script-blog-source {
+    margin-top: 4px;
+    font-size: 12px;
   }
 }
 .sheet-handle {

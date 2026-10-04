@@ -18,11 +18,20 @@ import { GoalCard } from "@/components/goals/goal-card";
 import { SubscriptionGrid } from "@/components/subscriptions/subscription-views";
 import { InboxItem } from "@/components/inbox/inbox-item";
 export function Dashboard() {
-  const { tasks, goals, subscriptions, inbox, socialAccounts, setAddKind, preferences } =
-    useApp();
+  const {
+    tasks,
+    goals,
+    subscriptions,
+    inbox,
+    socialAccounts,
+    setAddKind,
+    preferences,
+  } = useApp();
   const today = todayDate();
   const todayTasks = tasks.filter(
-    (task) => task.scope === "daily" && (task.date === today || (task.date < today && !task.completed)),
+    (task) =>
+      task.scope === "daily" &&
+      (task.date === today || (task.date < today && !task.completed)),
   );
   const totals = subscriptionTotals(subscriptions, preferences.currency);
   const next = nextRenewals(subscriptions, today)[0];
@@ -46,7 +55,11 @@ export function Dashboard() {
       </div>
       <div className="social-grid">
         {socialAccounts.map((account) => (
-          <SocialMetricCard key={account.id} account={account} href="/creator" />
+          <SocialMetricCard
+            key={account.id}
+            account={account}
+            href="/creator"
+          />
         ))}
       </div>
       <div className="dashboard-grid">
@@ -59,8 +72,8 @@ export function Dashboard() {
               <Sun size={15} />
             </span>
             {todayTasks.filter((task) => !task.completed).length === 0
-              ? "All done. Make a little time for yourself."
-              : "One thing at a time. You’re making progress."}
+              ? "All done."
+              : "One thing at a time."}
             <Link href="/tasks" aria-label="View all today's tasks">
               <ArrowRight size={16} />
             </Link>

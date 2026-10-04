@@ -23,7 +23,13 @@ export function TaskProgress({ tasks }: { tasks: Task[] }) {
     </div>
   );
 }
-export function TaskRow({ task, manageable = false }: { task: Task; manageable?: boolean }) {
+export function TaskRow({
+  task,
+  manageable = false,
+}: {
+  task: Task;
+  manageable?: boolean;
+}) {
   const { toggleTask, setEditingTask, deleteTask, stopTaskSeries } = useApp();
   return (
     <div className={cn("task-row", task.completed && "completed")}>
@@ -38,17 +44,50 @@ export function TaskRow({ task, manageable = false }: { task: Task; manageable?:
       </label>
       <div className="task-name">
         <span>{task.title}</span>
-        <small>{task.category}{task.recurrence && <> · <Repeat2 size={12} aria-hidden="true" /> {recurrenceDescription(task.recurrence)}</>}{isOverdue(task, todayDate()) && <> · Overdue</>}</small>
+        <small>
+          {task.category}
+          {task.recurrence && (
+            <>
+              {" "}
+              · <Repeat2 size={12} aria-hidden="true" />{" "}
+              {recurrenceDescription(task.recurrence)}
+            </>
+          )}
+          {isOverdue(task, todayDate()) && <> · Overdue</>}
+        </small>
       </div>
       <span className={`priority ${task.priority.toLowerCase()}`}>
         <i />
         {task.priority}
       </span>
-      {manageable && <EntityActions kind="task" name={task.title} onEdit={() => setEditingTask(task)} onDelete={() => deleteTask(task.id)} onStopFuture={task.recurrenceId ? () => stopTaskSeries(task.recurrenceId!, task.occurrenceDate ?? task.date) : undefined} canSkip={!task.completed} />}
+      {manageable && (
+        <EntityActions
+          kind="task"
+          name={task.title}
+          onEdit={() => setEditingTask(task)}
+          onDelete={() => deleteTask(task.id)}
+          onStopFuture={
+            task.recurrenceId
+              ? () =>
+                  stopTaskSeries(
+                    task.recurrenceId!,
+                    task.occurrenceDate ?? task.date,
+                  )
+              : undefined
+          }
+          canSkip={!task.completed}
+        />
+      )}
     </div>
   );
 }
-export function TaskList({ tasks, manageable = false }: { tasks: Task[]; manageable?: boolean }) {
+export function TaskList({
+  tasks,
+  manageable = false,
+}: {
+  tasks: Task[];
+  manageable?: boolean;
+}) {
   return tasks.length ? (
     <div className="task-list">
       {tasks.map((task) => (
@@ -58,7 +97,7 @@ export function TaskList({ tasks, manageable = false }: { tasks: Task[]; managea
   ) : (
     <EmptyState
       title="Nothing planned for today."
-      description="A little breathing room. Add a task when you're ready."
+      description="Add a task when you're ready."
     />
   );
 }

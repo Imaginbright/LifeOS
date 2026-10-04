@@ -11,9 +11,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "LifeOS — Your personal space", template: "%s · LifeOS" },
   description:
-    "A calm personal space for your tasks, goals, creative growth, and everyday essentials.",
+    "A calm personal space for my tasks, goals, creative growth, and everyday essentials.",
 };
-async function initialSession(): Promise<{ appearance: Preferences["appearance"]; signedIn: boolean }> {
+async function initialSession(): Promise<{
+  appearance: Preferences["appearance"];
+  signedIn: boolean;
+}> {
   try {
     const supabase = await createClient();
     const {
@@ -26,7 +29,13 @@ async function initialSession(): Promise<{ appearance: Preferences["appearance"]
       .select("appearance")
       .eq("id", user.id)
       .maybeSingle();
-    return { appearance: data?.appearance === "dark" || data?.appearance === "system" ? data.appearance : "light", signedIn: true };
+    return {
+      appearance:
+        data?.appearance === "dark" || data?.appearance === "system"
+          ? data.appearance
+          : "light",
+      signedIn: true,
+    };
   } catch {
     return { appearance: "light", signedIn: false };
   }

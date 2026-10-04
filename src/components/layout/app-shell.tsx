@@ -36,18 +36,45 @@ const navigation = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
-export function AppShell({ children, signedIn }: { children: ReactNode; signedIn: boolean }) {
+export function AppShell({
+  children,
+  signedIn,
+}: {
+  children: ReactNode;
+  signedIn: boolean;
+}) {
   const path = usePathname();
   const scriptsPath = path === "/scripts" || path.startsWith("/scripts/");
   const scriptPage =
-    path === "/scripts" ? "Scripts" :
-      path === "/scripts/youtube" || path.startsWith("/scripts/youtube/") ? "YouTube" :
-        path === "/scripts/shorts" || path.startsWith("/scripts/shorts/") ? "Shorts" :
-          path === "/scripts/blog" || path.startsWith("/scripts/blog/") ? "Blog" : "Writing";
-  const { inbox, setAddKind, preferences, error, clearError, refresh, loading } = useApp();
+    path === "/scripts"
+      ? "Scripts"
+      : path === "/scripts/youtube" || path.startsWith("/scripts/youtube/")
+        ? "YouTube"
+        : path === "/scripts/shorts" || path.startsWith("/scripts/shorts/")
+          ? "Shorts"
+          : path === "/scripts/blog" || path.startsWith("/scripts/blog/")
+            ? "Blog"
+            : "Writing";
+  const {
+    inbox,
+    setAddKind,
+    preferences,
+    error,
+    clearError,
+    refresh,
+    loading,
+  } = useApp();
   const unread = inbox.filter((item) => !item.read).length;
   if (path === "/" || path === "/privacy" || path === "/terms") {
-    return <PublicSiteShell landingAction={path === "/" ? signedIn ? "dashboard" : "login" : undefined}>{children}</PublicSiteShell>;
+    return (
+      <PublicSiteShell
+        landingAction={
+          path === "/" ? (signedIn ? "dashboard" : "login") : undefined
+        }
+      >
+        {children}
+      </PublicSiteShell>
+    );
   }
   if (path === "/login") return <>{children}</>;
   return (
@@ -96,7 +123,7 @@ export function AppShell({ children, signedIn }: { children: ReactNode; signedIn
               Small steps.
               <br />A life well lived.
             </p>
-            <span>Make space for what matters.</span>
+            <span>A space for things that actually matter.</span>
           </div>
           <Link href="/settings" className="profile">
             <span className="avatar">{preferences.name.charAt(0)}</span>
@@ -121,7 +148,11 @@ export function AppShell({ children, signedIn }: { children: ReactNode; signedIn
             LifeOS.
           </Link>
           <div className="top-actions">
-            <Link href="/scripts" className={cn("workspace-link", scriptsPath && "active")} aria-current={scriptsPath ? "page" : undefined}>
+            <Link
+              href="/scripts"
+              className={cn("workspace-link", scriptsPath && "active")}
+              aria-current={scriptsPath ? "page" : undefined}
+            >
               Scripts
               <ArrowUpRight size={14} strokeWidth={1.7} />
             </Link>
@@ -150,8 +181,24 @@ export function AppShell({ children, signedIn }: { children: ReactNode; signedIn
           </div>
         </div>
         <main id="main" className="main-content">
-          {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => { clearError(); void refresh(); }}>Try again</button></div>}
-          {loading && <div className="loading-line" role="status">Loading your space…</div>}
+          {error && (
+            <div className="error-banner" role="alert">
+              <span>{error}</span>
+              <button
+                onClick={() => {
+                  clearError();
+                  void refresh();
+                }}
+              >
+                Try again
+              </button>
+            </div>
+          )}
+          {loading && (
+            <div className="loading-line" role="status">
+              Loading your space…
+            </div>
+          )}
           {children}
           <footer className="page-footer">
             <span>Life, a little more in focus.</span>

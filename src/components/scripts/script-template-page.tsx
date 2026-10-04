@@ -25,17 +25,9 @@ export function ScriptTemplatePage({ template }: { template: ScriptTemplate }) {
         </div>
       </header>
 
-      <section className="script-document-intro" aria-label="Example manuscript">
-        <p className="eyebrow">Example manuscript</p>
-        <p className="script-template-intro-copy">Read it, then start a script from this complete example.</p>
-      </section>
-
-      <nav className="script-document-outline" aria-label="Manuscript sections">
-        {template.sections.map((section, index) => (
-          <a href={`#${section.id}`} key={section.id}><span>{String(index + 1).padStart(2, "0")}</span>{section.title}</a>
-        ))}
-      </nav>
-      {template.sections.length ? (
+      {template.type === "blog" ? (
+        <pre className="script-blog-source" aria-label="Raw MDX source"><code>{template.sourceMarkdown}</code></pre>
+      ) : template.sections.length ? (
         <ScriptManuscript sections={template.sections} />
       ) : (
         <p className="script-workspace-empty">This template has no readable sections. Edit it to add the manuscript.</p>

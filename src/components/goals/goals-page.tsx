@@ -11,9 +11,9 @@ export function GoalsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Your next chapter"
+        eyebrow="Next Big Thing"
         title="Good things take intention."
-        description="A few meaningful goals. A little progress, every day."
+        description="It does get easier."
         action={
           <AddButton onClick={() => setAddKind("goal")}>Add goal</AddButton>
         }

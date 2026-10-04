@@ -2,7 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseScriptMarkdown } from "../src/lib/scripts/markdown-parser";
 import { scriptTemplateInput } from "../src/lib/scripts/template-input";
-import { scriptManuscriptFromMarkdown } from "../src/lib/scripts/templates";
+import {
+  scriptContentFromTemplate,
+  createSavedTemplate,
+  scriptManuscriptFromMarkdown,
+  serializeVideoScriptSections,
+  videoScriptSectionsFromStoredContent,
+} from "../src/lib/scripts/templates";
 import { phoneReviewManuscript } from "../src/lib/scripts/phone-review-manuscript";
 import { scriptMedia } from "../src/lib/scripts/media";
 
@@ -80,4 +86,30 @@ test("starting a script stores a text snapshot independent of later template edi
   assert.doesNotMatch(snapshot, /#/);
   assert.doesNotMatch(snapshot, /A rewritten template/);
   assert.notEqual(snapshot, changedTemplate);
+});
+
+test("YouTube and Shorts start with editable structured copies of every template section", () => {
+  const source = "# Hook\n[OPEN — DESK B-ROLL]\n\nThe opening narration.\n\n## Why I bought it\nThe reason I chose it.";
+  for (const type of ["longform", "shorts"] as const) {
+    const snapshot = scriptContentFromTemplate(type, source);
+    const parsed = JSON.parse(snapshot) as { version: number; format: string; sections: Array<{ id: string; title: string; visuals: string[]; body: string }> };
+    assert.equal(parsed.version, 2);
+    assert.equal(parsed.format, "video-sections");
+    assert.deepEqual(parsed.sections.map(({ title }) => title), ["Hook", "Why I bought it"]);
+    assert.deepEqual(parsed.sections[0].visuals, ["[OPEN — DESK B-ROLL]"]);
+    assert.equal(parsed.sections[0].body, "The opening narration.");
+    assert.equal(parsed.sections[1].body, "The reason I chose it.");
+
+    parsed.sections[0].body = "Edited narration.";
+    const afterSaveAndReload = videoScriptSectionsFromStoredContent(serializeVideoScriptSections(parsed.sections));
+    assert.equal(afterSaveAndReload[0].title, "Hook");
+    assert.equal(afterSaveAndReload[0].visuals[0], "[OPEN — DESK B-ROLL]");
+    assert.equal(afterSaveAndReload[0].body, "Edited narration.");
+  }
+});
+
+test("Blog template and script content stay raw MDX instead of going through the video parser", () => {
+  const mdx = "# A Blog\n\n## Display\n\n<Component prop={{ value: true }} />\n\n```tsx\nexport default () => <p>source</p>;\n```";
+  assert.equal(scriptContentFromTemplate("blog", mdx), mdx);
+  assert.deepEqual(createSavedTemplate({ id: "blog-template", name: "MDX", type: "blog", sourceMarkdown: mdx }).sections, []);
 });

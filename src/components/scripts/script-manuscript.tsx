@@ -6,23 +6,11 @@ function manuscriptParagraphs(body: string) {
 
 export function ScriptManuscript({
   sections,
-  editable = false,
-  onInput,
 }: {
   sections: ParsedMarkdownSection[];
-  editable?: boolean;
-  onInput?: () => void;
 }) {
   return (
-    <article
-      className={`script-manuscript${editable ? " editable" : ""}`}
-      contentEditable={editable}
-      suppressContentEditableWarning
-      role={editable ? "textbox" : undefined}
-      aria-label={editable ? "Template manuscript" : undefined}
-      aria-multiline={editable ? true : undefined}
-      onInput={onInput}
-    >
+    <article className="script-manuscript">
       {sections.map((section, index) => (
         <section id={section.id} className="script-document-section" key={section.id}>
           <header><span>{String(index + 1).padStart(2, "0")}</span><h2>{section.title}</h2></header>

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { badRequest, cleanText, jsonBody, serverError } from "@/lib/api-response";
-import { scriptManuscriptFromMarkdown } from "@/lib/scripts/templates";
+import { scriptContentFromTemplate } from "@/lib/scripts/templates";
+import type { ScriptType } from "@/lib/types";
 
 export async function POST(request: Request) {
   const auth = await requireUser();
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     const title = cleanText(body.title, 180) || `Untitled ${template.name.toLowerCase()}`;
-    const content = scriptManuscriptFromMarkdown(template.source_markdown);
+    const content = scriptContentFromTemplate(template.type as ScriptType, template.source_markdown);
     const { data, error } = await auth.supabase
       .from("scripts")
       .insert({

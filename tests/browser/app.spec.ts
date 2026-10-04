@@ -52,28 +52,114 @@ test("a pasted template opens as a manuscript, can be edited, and seeds its full
   await expect(page.getByText("OPEN — TEST FOOTAGE")).toBeVisible();
 
   await page.getByRole("link", { name: "Edit template" }).click();
-  const passage = page.getByText("A complete sample narration.", { exact: true });
-  await passage.click();
-  await page.keyboard.press("Home");
-  await page.keyboard.type("Edited ");
+  const passage = page.getByLabel("Hook narration");
+  await expect(passage).toHaveValue("A complete sample narration.");
+  await passage.fill("Edited A complete sample narration.");
   await page.getByRole("button", { name: "Save template" }).click();
   await expect(page).toHaveURL(/\/scripts\/shorts\/templates\/[0-9a-f-]{36}$/);
   await expect(page.getByText("Edited A complete sample narration.")).toBeVisible();
 
   await page.getByRole("button", { name: "Start script" }).click();
   await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
-  const manuscript = page.getByLabel("Manuscript");
-  await expect(manuscript).toHaveValue(/Edited A complete sample narration\./);
-  await expect(manuscript).toHaveValue(/The catch/);
-  const edited = (await manuscript.inputValue()).replace("Edited A complete sample narration.", "Edited and rewritten sample narration.");
+  await expect(page.getByRole("heading", { level: 2, name: "Hook" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "The catch" })).toBeVisible();
+  const manuscript = page.getByLabel("Hook narration");
+  await expect(manuscript).toHaveValue("Edited A complete sample narration.");
+  const edited = "Edited and rewritten sample narration.";
   const saved = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
   await page.getByLabel("Script title").fill("Playwright Shorts draft");
   await manuscript.fill(edited);
   await saved;
   await page.reload();
   await expect(page.getByLabel("Script title")).toHaveValue("Playwright Shorts draft");
-  await expect(manuscript).toHaveValue(edited);
+  await expect(page.getByRole("heading", { level: 2, name: "Hook" })).toBeVisible();
+  await expect(page.getByLabel("Hook narration")).toHaveValue(edited);
 });
+
+test("YouTube keeps structured sections and Blog keeps raw MDX through edit, save, reload, and copy", async ({ page }) => {
+  test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, "E2E owner credentials are not configured");
+  await page.addInitScript(() => {
+    const clipboard = { text: "" };
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async (text: string) => { clipboard.text = text; }, readText: async () => clipboard.text },
+    });
+  });
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(process.env.E2E_EMAIL!);
+  await page.getByLabel("Password").fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  const stamp = Date.now();
+  const created: Array<{ kind: "script" | "template"; id: string }> = [];
+  try {
+    await page.goto("/scripts/youtube/templates/new");
+    await page.getByLabel("Template name").fill(`YouTube structured ${stamp}`);
+    await page.getByLabel("Paste manuscript").fill("# Hook\n[OPEN — CAMERA]\nAn opening line.\n\n## Verdict\nA clear conclusion.");
+    await expect(page.locator(".script-template-parse-preview li")).toHaveCount(2);
+    await page.getByRole("button", { name: "Save template" }).click();
+    await expect(page).toHaveURL(/\/scripts\/youtube\/templates\/[0-9a-f-]{36}$/);
+    const youtubeTemplateId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
+    if (youtubeTemplateId) created.push({ kind: "template", id: youtubeTemplateId });
+    await page.getByRole("button", { name: "Start script" }).click();
+    await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
+    const youtubeScriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
+    if (youtubeScriptId) created.push({ kind: "script", id: youtubeScriptId });
+    await expect(page.getByRole("heading", { level: 2, name: "Hook" })).toBeVisible();
+    await expect(page.getByLabel("Hook visual directions")).toHaveValue("[OPEN — CAMERA]");
+    await expect(page.getByLabel("Hook narration")).toHaveValue("An opening line.");
+    const youtubeSave = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
+    await page.getByLabel("Hook narration").fill("An edited opening line.");
+    await youtubeSave;
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: "Hook" })).toBeVisible();
+    await expect(page.getByLabel("Hook narration")).toHaveValue("An edited opening line.");
+
+    const mdx = "# Hardware notes\n\n## Display\n\n<Component mode={{ exact: true }} />\n\n```tsx\nexport default () => <p>Keep this MDX.</p>;\n```";
+    await page.goto("/scripts/blog/templates/new");
+    await page.getByLabel("Template name").fill(`Blog MDX ${stamp}`);
+    await page.getByLabel("MDX source").fill(mdx);
+    await expect(page.locator(".script-template-parse-preview")).toHaveCount(0);
+    await page.getByRole("button", { name: "Save template" }).click();
+    await expect(page).toHaveURL(/\/scripts\/blog\/templates\/[0-9a-f-]{36}$/);
+    const blogTemplateId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
+    if (blogTemplateId) created.push({ kind: "template", id: blogTemplateId });
+    await expect(page.locator(".script-blog-source code")).toHaveText(mdx);
+    await expect(page.locator(".script-document-outline")).toHaveCount(0);
+    await page.getByRole("link", { name: "Edit template" }).click();
+    await expect(page.getByLabel("MDX source")).toHaveValue(mdx);
+    const editedMdx = mdx + "\n\n## Notes\n\n{featured ? <strong>Yes</strong> : null}";
+    await page.getByLabel("MDX source").fill(editedMdx);
+    await page.getByRole("button", { name: "Save template" }).click();
+    await expect(page.locator(".script-blog-source code")).toHaveText(editedMdx);
+
+    await page.getByRole("button", { name: "Start script" }).click();
+    await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
+    const blogScriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
+    if (blogScriptId) created.push({ kind: "script", id: blogScriptId });
+    await expect(page.getByLabel("MDX source")).toHaveValue(editedMdx);
+    await expect(page.locator(".script-section-editor")).toHaveCount(0);
+    await expect(page.locator(".script-document-outline")).toHaveCount(0);
+    await page.getByRole("button", { name: /Actions for/ }).click();
+    await page.getByRole("menuitem", { name: "Copy MDX" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "MDX copied" })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(editedMdx);
+
+    const editedScriptMdx = editedMdx.replace("Keep this MDX.", "The raw source still edits.");
+    const blogSave = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
+    await page.getByLabel("MDX source").fill(editedScriptMdx);
+    await blogSave;
+    await page.reload();
+    await expect(page.getByLabel("MDX source")).toHaveValue(editedScriptMdx);
+  } finally {
+    for (const resource of created.reverse()) {
+      const path = resource.kind === "script" ? "scripts" : "script-templates";
+      await page.evaluate(({ path, id }) => fetch(`/api/${path}/${id}`, { method: "DELETE" }), { path, id: resource.id });
+    }
+  }
+});
+
 test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templates can be deleted independently", async ({ page }) => {
   test.skip(!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD, "E2E owner credentials are not configured");
   await page.addInitScript(() => {
@@ -116,18 +202,18 @@ test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templ
     await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
     scriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
     await page.getByLabel("Script title").fill(scriptTitle);
-    const manuscript = page.getByLabel("Manuscript");
+    const manuscript = page.getByLabel("Hook narration");
     const original = await manuscript.inputValue();
     await manuscript.focus();
     const before = await page.evaluate(() => ({
-      editorHeight: document.querySelector("#script-manuscript")!.getBoundingClientRect().height,
+      editorHeight: document.querySelector(".script-section-body")!.getBoundingClientRect().height,
       documentHeight: document.documentElement.scrollHeight,
     }));
     const saved = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
     await manuscript.fill(original + "\n\nMobile writing remains here.");
     await saved;
     const after = await page.evaluate(() => ({
-      editorHeight: document.querySelector("#script-manuscript")!.getBoundingClientRect().height,
+      editorHeight: document.querySelector(".script-section-body")!.getBoundingClientRect().height,
       documentHeight: document.documentElement.scrollHeight,
     }));
     expect(after.editorHeight).toBe(before.editorHeight);
@@ -137,8 +223,7 @@ test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templ
     await page.getByRole("button", { name: "Actions for " + scriptTitle }).click();
     await page.getByRole("menuitem", { name: "Copy script" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Script copied" })).toBeVisible();
-    const actualManuscript = await manuscript.inputValue();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(scriptTitle + "\n\n" + actualManuscript);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${scriptTitle}\n\nHook\n\n${await manuscript.inputValue()}\n\nThe catch\n\nA practical tradeoff.`);
     await expect(page).toHaveURL(scriptUrl);
 
     await page.evaluate(() => {
@@ -159,7 +244,7 @@ test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templ
     await expect(page.locator(".script-template-list").getByText(templateName)).toHaveCount(0);
 
     await page.goto("/scripts/" + scriptId);
-    await expect(page.getByLabel("Manuscript")).toHaveValue(/Mobile writing remains here\./);
+    await expect(page.getByLabel("Hook narration")).toHaveValue(/Mobile writing remains here\./);
     await page.getByRole("button", { name: "Actions for " + scriptTitle }).click();
     await page.getByRole("menuitem", { name: "Delete script" }).click();
     await expect(page.getByRole("heading", { name: "Delete script?" })).toBeVisible();

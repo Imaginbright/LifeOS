@@ -12,6 +12,8 @@ type ScriptWorkspaceActionsProps = {
   name: string;
   returnHref: string;
   copyText?: string;
+  copyLabel?: string;
+  copyFeedbackText?: string;
   canCopy?: boolean;
 };
 
@@ -21,6 +23,8 @@ export function ScriptWorkspaceActions({
   name,
   returnHref,
   copyText,
+  copyLabel = "Copy script",
+  copyFeedbackText = "Script copied",
   canCopy = false,
 }: ScriptWorkspaceActionsProps) {
   const router = useRouter();
@@ -79,7 +83,7 @@ export function ScriptWorkspaceActions({
           <DropdownMenu.Content className="entity-menu" sideOffset={5} align="end">
             {resource === "script" && canCopy && (
               <DropdownMenu.Item className="entity-menu-item" onSelect={() => void copyScript()}>
-                <Copy size={15} />Copy script
+                <Copy size={15} />{copyLabel}
               </DropdownMenu.Item>
             )}
             <DropdownMenu.Item className="entity-menu-item destructive-text" onSelect={() => { setDeleteError(null); setConfirming(true); }}>
@@ -112,7 +116,7 @@ export function ScriptWorkspaceActions({
 
       {copyFeedback && (
         <p className={`script-action-feedback ${copyFeedback}`} role="status" aria-live="polite">
-          {copyFeedback === "copied" ? "Script copied" : "Couldn’t copy. Select the manuscript and copy it manually."}
+          {copyFeedback === "copied" ? copyFeedbackText : "Couldn’t copy. Select the content and copy it manually."}
         </p>
       )}
     </>

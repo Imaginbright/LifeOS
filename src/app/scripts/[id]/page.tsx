@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ScriptEditor } from "@/components/scripts/script-editor";
-import { isStaleScriptDraft, scriptManuscriptFromStoredContent } from "@/lib/scripts/templates";
+import { isStaleScriptDraft } from "@/lib/scripts/templates";
 import { createClient } from "@/lib/supabase/server";
 import type { ScriptType } from "@/lib/types";
 
@@ -33,7 +33,7 @@ export default async function ScriptPage({ params }: PageProps) {
     <ScriptEditor
       id={data.id}
       initialTitle={data.title}
-      initialContent={scriptManuscriptFromStoredContent(data.content)}
+      initialContent={data.content ?? ""}
       type={data.type as ScriptType}
     />
   );

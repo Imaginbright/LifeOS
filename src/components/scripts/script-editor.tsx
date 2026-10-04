@@ -4,8 +4,13 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Cloud, RotateCw } from "lucide-react";
 import { scriptMediaForType } from "@/lib/scripts/media";
-import { formatScriptClipboardText } from "@/lib/scripts/clipboard";
+import { scriptClipboardText } from "@/lib/scripts/clipboard";
+import { ScriptSectionEditor } from "@/components/scripts/script-section-editor";
 import { ScriptWorkspaceActions } from "@/components/scripts/script-workspace-actions";
+import {
+  serializeVideoScriptSections,
+  videoScriptSectionsFromStoredContent,
+} from "@/lib/scripts/templates";
 import type { ScriptType } from "@/lib/types";
 
 type SaveState = "saved" | "saving" | "error";
@@ -23,25 +28,16 @@ export function ScriptEditor({
 }) {
   const medium = scriptMediaForType(type);
   const [title, setTitle] = useState(initialTitle);
-  const [content, setContent] = useState(initialContent);
+  const [rawMdx, setRawMdx] = useState(initialContent);
+  const [sections, setSections] = useState(() => type === "blog" ? [] : videoScriptSectionsFromStoredContent(initialContent));
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [retry, setRetry] = useState(0);
   const version = useRef(0);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const flushSave = useRef(false);
-  const manuscriptRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const textarea = manuscriptRef.current;
-    if (!textarea) return;
-    if (window.matchMedia("(max-width: 600px)").matches) {
-      textarea.style.removeProperty("height");
-      return;
-    }
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.max(textarea.scrollHeight, 320)}px`;
-  }, [content]);
+  const content = type === "blog" ? rawMdx : serializeVideoScriptSections(sections);
+  const copyText = scriptClipboardText(type, title, rawMdx, sections);
 
   useEffect(() => {
     if (!dirty) return;
@@ -71,18 +67,25 @@ export function ScriptEditor({
     return () => window.clearTimeout(timer);
   }, [content, dirty, id, retry, title]);
 
-  function updateTitle(value: string) {
+  function markDirty() {
     version.current += 1;
-    setTitle(value);
     setDirty(true);
     setSaveState("saving");
   }
 
-  function updateContent(value: string) {
-    version.current += 1;
-    setContent(value);
-    setDirty(true);
-    setSaveState("saving");
+  function updateTitle(value: string) {
+    setTitle(value);
+    markDirty();
+  }
+
+  function updateRawMdx(value: string) {
+    setRawMdx(value);
+    markDirty();
+  }
+
+  function updateSections(value: typeof sections) {
+    setSections(value);
+    markDirty();
   }
 
   function saveNow() {
@@ -105,7 +108,9 @@ export function ScriptEditor({
                 id={id}
                 name={title || "script"}
                 returnHref={`/scripts/${medium.slug}`}
-                copyText={formatScriptClipboardText(title, content)}
+                copyText={copyText}
+                copyLabel={type === "blog" ? "Copy MDX" : "Copy script"}
+                copyFeedbackText={type === "blog" ? "MDX copied" : "Script copied"}
                 canCopy={!dirty && saveState === "saved"}
               />
             </div>
@@ -115,19 +120,26 @@ export function ScriptEditor({
         </div>
       </header>
 
-      <section className="script-editor-document" aria-label="Editable script manuscript">
-        <textarea
-          ref={manuscriptRef}
-          id="script-manuscript"
-          aria-label="Manuscript"
-          value={content}
-          onChange={(event) => updateContent(event.target.value)}
-          maxLength={500_000}
-          placeholder="Your manuscript starts here. Add, remove, or rewrite anything."
-          spellCheck
-        />
-        <p className="script-writing-hint">Your changes save automatically.</p>
-      </section>
+      {type === "blog" ? (
+        <section className="script-editor-document script-blog-editor" aria-label="Editable Blog MDX source">
+          <textarea
+            id="script-mdx"
+            aria-label="MDX source"
+            value={rawMdx}
+            onChange={(event) => updateRawMdx(event.target.value)}
+            maxLength={500_000}
+            placeholder="Your MDX source starts here."
+            spellCheck
+          />
+          <p className="script-writing-hint">Your changes save automatically.</p>
+        </section>
+      ) : (
+        <section className="script-editor-document" aria-label="Editable structured script manuscript">
+          <ScriptSectionEditor sections={sections} onChange={updateSections} />
+          {!sections.length && <p className="script-writing-hint">Add a section to begin your script.</p>}
+          {sections.length > 0 && <p className="script-writing-hint">Your changes save automatically.</p>}
+        </section>
+      )}
     </div>
   );
 }

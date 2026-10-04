@@ -14,10 +14,36 @@ export function CreatorPage() {
   const [period, setPeriod] = useState<keyof typeof periods>("30D");
   return (
     <>
-      <PageHeader eyebrow="Your creative corner" title="A growing community." description="A little perspective on the people you reach." />
-      <div className="social-grid">{socialAccounts.map((account) => <SocialMetricCard key={account.id} account={account} comparison={periodComparison(socialSnapshots.filter((item) => item.platform === account.platform), periods[period], period, new Date())} />)}</div>
-      <AudienceChart accounts={socialAccounts} snapshots={socialSnapshots} period={period} setPeriod={setPeriod} />
-      <p className="data-note">Audience history is recorded when a connected account synchronizes.</p>
+      <PageHeader
+        eyebrow="creative corner"
+        title="A growing community."
+        description="A little perspective on the people you reach."
+      />
+      <div className="social-grid">
+        {socialAccounts.map((account) => (
+          <SocialMetricCard
+            key={account.id}
+            account={account}
+            comparison={periodComparison(
+              socialSnapshots.filter(
+                (item) => item.platform === account.platform,
+              ),
+              periods[period],
+              period,
+              new Date(),
+            )}
+          />
+        ))}
+      </div>
+      <AudienceChart
+        accounts={socialAccounts}
+        snapshots={socialSnapshots}
+        period={period}
+        setPeriod={setPeriod}
+      />
+      <p className="data-note">
+        Audience history is recorded when a connected account synchronizes.
+      </p>
     </>
   );
 }

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { isStaleScriptDraft, isStaleScriptTemplate, scriptManuscriptFromStoredContent } from "../src/lib/scripts/templates";
+import { isStaleScriptDraft, isStaleScriptTemplate, scriptManuscriptFromStoredContent, videoScriptSectionsFromStoredContent } from "../src/lib/scripts/templates";
 
 const foundationSql = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261001090000_scripts_foundation.sql", import.meta.url)), "utf8");
 const templatesSql = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261001130000_script_templates.sql", import.meta.url)), "utf8");
@@ -24,6 +24,12 @@ test("old section-based drafts still open as readable manuscript text", () => {
   assert.match(manuscript, /My original narration/);
   assert.match(manuscript, /My conclusion/);
   assert.equal(scriptManuscriptFromStoredContent("Plain text manuscript"), "Plain text manuscript");
+  const editableSections = videoScriptSectionsFromStoredContent(legacy);
+  assert.deepEqual(editableSections.map(({ title }) => title), ["Hook", "Verdict"]);
+  assert.deepEqual(editableSections[0].visuals, ["OPEN — B-ROLL"]);
+  assert.equal(editableSections[0].body, "My original narration.");
+  assert.deepEqual(videoScriptSectionsFromStoredContent("Not JSON: a complete old manuscript").map(({ body }) => body), ["Not JSON: a complete old manuscript"]);
+  assert.equal(videoScriptSectionsFromStoredContent('{"version":2,"format":"video-sections","sections":[null]}')[0].body.includes("video-sections"), true);
 });
 
 test("known temporary Playwright template and draft fixtures are kept out of the workspace", () => {
