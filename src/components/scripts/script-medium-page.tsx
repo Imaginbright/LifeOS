@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FilePlus2 } from "lucide-react";
+import { CreateScriptButton } from "@/components/scripts/create-script-button";
 import { loadScriptMediumData } from "@/lib/scripts/server-data";
 import { scriptMediaForType } from "@/lib/scripts/media";
 import { parseScriptMarkdown } from "@/lib/scripts/markdown-parser";
@@ -19,7 +20,7 @@ export async function ScriptMediumPage({ type }: { type: ScriptType }) {
           <p className="page-description">{medium.description}</p>
         </div>
         <div className="script-medium-actions">
-          <Link href="#templates" className="button secondary">New script</Link>
+          <CreateScriptButton type={type} variant="secondary" showIcon={false}>New script</CreateScriptButton>
           <Link href={createHref} className="button primary"><FilePlus2 size={16} />New template</Link>
         </div>
       </header>
@@ -64,7 +65,7 @@ export async function ScriptMediumPage({ type }: { type: ScriptType }) {
             ))}
           </ul>
         ) : (
-          <div className="script-workspace-empty"><p>No scripts yet.</p><span>Open a template and choose Start script.</span></div>
+          <div className="script-workspace-empty"><p>No scripts yet.</p><span>Start a draft directly or open a template first.</span></div>
         )}
       </section>
 
