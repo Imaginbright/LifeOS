@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { createSavedTemplate, isStaleScriptTemplate } from "@/lib/scripts/templates";
 import type { ScriptType } from "@/lib/types";
 import { ScriptTemplateForm } from "@/components/scripts/script-template-form";
@@ -7,7 +7,7 @@ import { ScriptTemplatePage } from "@/components/scripts/script-template-page";
 
 export async function ScriptTemplateRoute({ id, type, edit = false }: { id: string; type: ScriptType; edit?: boolean }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCurrentUser();
   if (!user) notFound();
 
   const { data, error } = await supabase

@@ -39,12 +39,12 @@ export function QuickAdd() {
     : app.editingTask
       ? "Edit your task."
     : app.addKind === "menu"
-      ? "Make a little room."
+      ? "Quick add"
       : app.addKind === "task"
-        ? "One thing at a time."
+        ? "Add task"
         : app.addKind === "goal"
-          ? "Something to work toward."
-          : "Keep track of the little things.";
+          ? "Add goal"
+          : "Add subscription";
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (app.pending) return;
@@ -127,18 +127,11 @@ export function QuickAdd() {
           >
             <X size={20} />
           </Dialog.Close>
-          <p className="eyebrow">
-            {app.editingGoal || app.editingTask
-              ? `Edit ${app.editingGoal ? "goal" : "task"}`
-              : app.addKind === "menu"
-                ? "Quick add"
-                : `Add ${app.addKind}`}
-          </p>
           <Dialog.Title>{title}</Dialog.Title>
-          <Dialog.Description id="dialog-description">
+          <Dialog.Description id="dialog-description" className="sr-only">
             {app.addKind === "menu"
-              ? "A task, a goal, or something to keep an eye on."
-              : "Give it a place in your personal space."}
+              ? "Create a task, goal, or subscription."
+              : "Enter the details and save your changes."}
           </Dialog.Description>
           {app.addKind === "menu" ? (
             <>
@@ -148,19 +141,16 @@ export function QuickAdd() {
                     {
                       key: "task",
                       title: "Add task",
-                      text: "Free up a little headspace",
                       icon: CheckCheck,
                     },
                     {
                       key: "goal",
                       title: "Add goal",
-                      text: "Give your next chapter a direction",
                       icon: Flag,
                     },
                     {
                       key: "subscription",
                       title: "Add subscription",
-                      text: "Know what renews next",
                       icon: CreditCard,
                     },
                   ] as const
@@ -174,13 +164,12 @@ export function QuickAdd() {
                     </span>
                     <span>
                       <strong>{item.title}</strong>
-                      <small>{item.text}</small>
                     </span>
                     <ArrowRight size={18} />
                   </button>
                 ))}
               </div>
-              <p className="eyebrow more-label">Explore your space</p>
+              <p className="eyebrow more-label">More pages</p>
               <div className="more-links">
                 {[
                   {
@@ -301,7 +290,7 @@ export function QuickAdd() {
                     />
                   </label>
                   <label>
-                    A little context
+                    Description
                     <textarea
                       name="description"
                       placeholder="Why does this matter to you?"

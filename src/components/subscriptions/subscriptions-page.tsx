@@ -25,9 +25,7 @@ export function SubscriptionsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The things you make room for"
         title="Your subscriptions."
-        description="A clear picture of the little recurring things."
         action={
           <AddButton onClick={() => setAddKind("subscription")}>
             Add subscription
@@ -44,12 +42,10 @@ export function SubscriptionsPage() {
         <div>
           <p className="eyebrow">Yearly projection</p>
           <strong>{money(totals.yearly, currency)}</strong>
-          <span>At your current pace</span>
         </div>
         <div>
           <p className="eyebrow">Active</p>
           <strong>{totals.count.toString().padStart(2, "0")}</strong>
-          <span>A little part of your everyday</span>
         </div>
         <div>
           <p className="eyebrow">Next renewal</p>
@@ -60,8 +56,7 @@ export function SubscriptionsPage() {
       <Tabs.Root defaultValue="grid">
         <div className="subscriptions-toolbar">
           <div>
-            <h2>Your everyday essentials</h2>
-            <p>Everything in its own little place.</p>
+            <h2>Subscriptions</h2>
           </div>
           <div className="view-controls">
             <label className="sr-only" htmlFor="currency-filter">

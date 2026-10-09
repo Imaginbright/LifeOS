@@ -58,8 +58,7 @@ export function CalendarPage() {
   return (
     <>
       <PageHeader
-        eyebrow="A little perspective"
-        title="Space for your days."
+        title="Calendar"
         description="Your tasks, renewals, and milestones in one place."
       />
       <div className="calendar-layout">
@@ -155,7 +154,6 @@ export function CalendarPage() {
           </div>
         </section>
         <section className="card day-agenda">
-          <p className="eyebrow">A look at your day</p>
           <h2>{format(new Date(`${selected}T12:00:00`), "MMMM d")}</h2>
           {selectedItems.length ? (
             selectedItems.map((item) => (
@@ -170,7 +168,7 @@ export function CalendarPage() {
             ))
           ) : (
             <EmptyState
-              title="A little breathing room."
+              title="No events"
               description="Nothing scheduled for this day."
             />
           )}

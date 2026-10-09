@@ -23,15 +23,16 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-function useAppState() {
+function useAppState(initialPreferences?: Preferences) {
   const path = usePathname();
   const { theme, resolvedTheme, setTheme } = useTheme();
   const themeReady = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const appearance = isAppearance(theme) ? theme : defaults.preferences.appearance;
   const resolvedAppearance = resolvedTheme === "dark" ? "dark" : "light";
   const publicPage = ["/", "/login", "/privacy", "/terms"].includes(path);
-  const [data, setData] = useState<AppData>(defaults);
+  const [data, setData] = useState<AppData>(() => initialPreferences ? { ...defaults, preferences: initialPreferences } : defaults);
   const [loading, setLoading] = useState(!publicPage);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [socialPending, setSocialPending] = useState<string | null>(null);
@@ -58,6 +59,7 @@ function useAppState() {
       const profileAppearance = incoming.preferences.appearance;
       incoming.preferences = { ...incoming.preferences, appearance: browserAppearance };
       setData(incoming);
+      setReady(true);
       loaded.current = true;
       if (browserAppearance !== profileAppearance) {
         void api("/api/profile", {
@@ -126,7 +128,7 @@ function useAppState() {
   }
 
   return {
-    ...data, appearance, resolvedAppearance, themeReady, setAppearance, loading, error, pending, socialPending, refresh, addKind, setAddKind, editingGoal, setEditingGoal, editingTask, setEditingTask, setPreferences, announcement,
+    ...data, appearance, resolvedAppearance, themeReady, setAppearance, loading, ready, error, pending, socialPending, refresh, addKind, setAddKind, editingGoal, setEditingGoal, editingTask, setEditingTask, setPreferences, announcement,
     clearError: () => setError(""),
     toggleTask: async (id: string) => {
       const previous = data.tasks;
@@ -218,8 +220,8 @@ function useAppState() {
 
 type AppState = ReturnType<typeof useAppState>;
 const AppContext = createContext<AppState | null>(null);
-export function AppProvider({ children }: { children: ReactNode }) {
-  const state = useAppState();
+export function AppProvider({ children, initialPreferences }: { children: ReactNode; initialPreferences?: Preferences }) {
+  const state = useAppState(initialPreferences);
   return <AppContext.Provider value={state}>{children}<span className="sr-only" role="status">{state.announcement}</span></AppContext.Provider>;
 }
 export function useApp() { const value = useContext(AppContext); if (!value) throw new Error("useApp needs AppProvider"); return value; }

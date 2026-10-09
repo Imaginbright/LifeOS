@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Sun } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useApp } from "@/components/shared/app-provider";
 import {
   AddButton,
@@ -50,7 +50,7 @@ export function Dashboard() {
       <div className="dashboard-section-label">
         <span className="eyebrow">Your audience</span>
         <Link href="/creator">
-          A little growth, every day <ArrowUpRight size={14} />
+          Creator <ArrowUpRight size={14} />
         </Link>
       </div>
       <div className="social-grid">
@@ -67,25 +67,13 @@ export function Dashboard() {
           <SectionTitle title="Today's tasks" href="/tasks" />
           <TaskProgress tasks={todayTasks} />
           <TaskList tasks={todayTasks.slice(0, 5)} />
-          <div className="card-footnote">
-            <span className="tiny-sun">
-              <Sun size={15} />
-            </span>
-            {todayTasks.filter((task) => !task.completed).length === 0
-              ? "All done."
-              : "One thing at a time."}
-            <Link href="/tasks" aria-label="View all today's tasks">
-              <ArrowRight size={16} />
-            </Link>
-          </div>
         </section>
         <section className="card goals-preview-card">
           <SectionTitle
-            title="A little closer"
+            title="Goals"
             href="/goals"
             label="All goals"
           />
-          <p className="section-subtitle">Big things, small steps.</p>
           {goals.length ? (
             goals
               .slice(0, 2)
@@ -149,11 +137,10 @@ export function Dashboard() {
         </section>
         <section className="card inbox-preview-card">
           <SectionTitle
-            title="On your radar"
+            title="Inbox"
             href="/inbox"
             label="Open inbox"
           />
-          <p className="section-subtitle">A few things worth your attention.</p>
           {inbox.length ? (
             inbox
               .slice(0, 3)

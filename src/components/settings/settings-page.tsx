@@ -16,15 +16,15 @@ export function SettingsPage({ noticeKey }: { noticeKey?: string }) {
   const update = <K extends keyof Preferences>(key: K, value: Preferences[K]) => setPreferences((previous) => ({ ...previous, [key]: value }));
   return (
     <>
-      <PageHeader eyebrow="Make yourself at home" title="Your space, your way." description="The little preferences that make it feel like you." />
+      <PageHeader title="Settings" />
       {notice && <div className="status-banner" role="status">{notice}</div>}
       <div className="settings-layout">
-        <section className="card settings-card"><h2>The everyday details</h2>
-          <div className="setting-row"><div><h3>What should we call you?</h3><p>A familiar face in your personal space.</p></div><label className="sr-only" htmlFor="display-name">Display name</label><input id="display-name" value={preferences.name} maxLength={30} onChange={(event) => update("name", event.target.value)} /></div>
+        <section className="card settings-card"><h2>Preferences</h2>
+          <div className="setting-row"><div><h3>What should we call you?</h3></div><label className="sr-only" htmlFor="display-name">Display name</label><input id="display-name" value={preferences.name} maxLength={30} onChange={(event) => update("name", event.target.value)} /></div>
           <div className="setting-row"><div><h3>Preferred currency</h3><p>Your default when adding subscriptions.</p></div><label className="sr-only" htmlFor="preferred-currency">Preferred currency</label><select id="preferred-currency" value={preferences.currency} onChange={(event) => update("currency", event.target.value as Currency)}>{["NGN", "USD", "GBP", "EUR"].map((value) => <option key={value}>{value}</option>)}</select></div>
-          <div className="setting-row"><div><h3>Start of week</h3><p>A fresh start, on your terms.</p></div><label className="sr-only" htmlFor="start-week">Start of week</label><select id="start-week" value={preferences.startOfWeek} onChange={(event) => update("startOfWeek", event.target.value as Preferences["startOfWeek"])}><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div>
+          <div className="setting-row"><div><h3>Start of week</h3></div><label className="sr-only" htmlFor="start-week">Start of week</label><select id="start-week" value={preferences.startOfWeek} onChange={(event) => update("startOfWeek", event.target.value as Preferences["startOfWeek"])}><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div>
         </section>
-        <section className="card settings-card"><h2>Appearance</h2><p className="section-subtitle">Find your comfortable light.</p><div className="appearance-options">{([{ value: "light", title: "Light", icon: Sun }, { value: "dark", title: "Dark", icon: Moon }, { value: "system", title: "System", icon: Monitor }] as const).map((item) => <button key={item.value} className={themeReady && appearance === item.value ? "selected" : ""} aria-pressed={themeReady && appearance === item.value} disabled={!themeReady} onClick={() => setAppearance(item.value)}><item.icon size={24} strokeWidth={1.5} /><span>{item.title}</span></button>)}</div></section>
+        <section className="card settings-card"><h2>Appearance</h2><div className="appearance-options">{([{ value: "light", title: "Light", icon: Sun }, { value: "dark", title: "Dark", icon: Moon }, { value: "system", title: "System", icon: Monitor }] as const).map((item) => <button key={item.value} className={themeReady && appearance === item.value ? "selected" : ""} aria-pressed={themeReady && appearance === item.value} disabled={!themeReady} onClick={() => setAppearance(item.value)}><item.icon size={24} strokeWidth={1.5} /><span>{item.title}</span></button>)}</div></section>
         <section className="card settings-card"><h2>Creator accounts</h2><p className="section-subtitle">Connect the accounts whose audience you want to follow.</p>
           {providers.map(({ platform, label }) => {
             const summary = socialAccounts.find((item) => item.platform === platform);

@@ -4,8 +4,8 @@ export default function NotFound() {
   return (
     <div className="card">
       <EmptyState
-        title="A little off the path."
-        description="This page isn't part of your space yet."
+        title="Page not found"
+        description="The page you're looking for could not be found."
         action={
           <Link href="/" className="button primary">
             Back to your dashboard

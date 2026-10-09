@@ -47,9 +47,7 @@ export function TasksPage() {
   return (
     <>
       <PageHeader
-        eyebrow="A little more headspace"
         title="Your tasks."
-        description="Make room for what matters today."
         action={
           <AddButton onClick={() => setAddKind("task")}>Add task</AddButton>
         }
@@ -83,7 +81,7 @@ export function TasksPage() {
             {overdue.length > 0 && (
               <section className="card">
                 <div className="section-title">
-                  <h2>Ready for a fresh start</h2>
+                  <h2>Overdue</h2>
                   <span className="tag warning">{overdue.length} overdue</span>
                 </div>
                 <TaskList tasks={overdue} manageable />
@@ -114,7 +112,7 @@ export function TasksPage() {
             )}
             {!upcoming.length && !overdue.length && !pastCompleted.length && (
               <EmptyState
-                title="Your horizon is clear."
+                title="No upcoming tasks."
                 description="Add a task for a future date to see it here."
               />
             )}
@@ -123,7 +121,6 @@ export function TasksPage() {
         <Tabs.Content value="monthly">
           <div className="monthly-overview">
             <div>
-              <p className="eyebrow">The bigger picture</p>
               <h2>
                 {format(currentDate, "MMMM")} <span>{format(currentDate, "yyyy")}</span>
               </h2>

@@ -167,10 +167,8 @@ svg {
   color: var(--primary);
   margin-left: -10px;
 }
-.sidebar-caption {
-  margin: 10px 0 43px 2px;
-  font-size: 13px;
-  color: var(--muted-foreground);
+.sidebar > .wordmark + .nav-label {
+  margin-top: 32px;
 }
 .nav-label,
 .eyebrow {
@@ -233,25 +231,6 @@ svg {
   margin-top: auto;
   padding-top: 40px;
 }
-.small-reminder {
-  padding: 23px 16px;
-  background: var(--subtle-surface);
-  border-radius: 13px;
-  color: var(--subtle-foreground);
-  margin-bottom: 21px;
-}
-.small-reminder p {
-  font-size: 18px;
-  letter-spacing: -0.4px;
-  line-height: 1.45;
-  margin-top: 14px;
-}
-.small-reminder > span {
-  display: block;
-  font-size: 11px;
-  color: var(--muted-foreground);
-  margin-top: 10px;
-}
 .profile {
   border-top: 1px solid var(--border);
   padding-top: 20px;
@@ -263,12 +242,6 @@ svg {
   font-size: 14px;
   font-weight: 550;
   display: block;
-}
-.profile small {
-  display: block;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  margin-top: 4px;
 }
 .profile > svg {
   margin-left: auto;
@@ -368,7 +341,7 @@ svg {
 .main-content {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 35px 43px 0;
+  padding: 35px 43px 32px;
 }
 .page-header {
   display: flex;
@@ -726,20 +699,6 @@ h2 {
 }
 .completed .priority {
   color: var(--muted-foreground);
-}
-.card-footnote {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  color: var(--muted-foreground);
-  padding-top: 16px;
-}
-.tiny-sun {
-  color: var(--muted-foreground);
-}
-.card-footnote > a {
-  margin-left: auto;
 }
 .goal-preview {
   padding: 23px 0 22px;
@@ -1139,26 +1098,6 @@ h2 {
   margin-top: 19px;
   font-size: 11px;
   color: var(--muted-foreground);
-}
-.page-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 18px;
-  padding: 27px 1px;
-  margin-top: 7px;
-  font-size: 11px;
-  color: var(--muted-foreground);
-}
-.page-footer > nav {
-  display: flex;
-  gap: 16px;
-}
-.page-footer > nav a:hover {
-  color: var(--foreground);
-}
-.footer-dot {
-  padding: 0 5px;
 }
 .mobile-nav,
 .mobile-wordmark {
@@ -1974,12 +1913,6 @@ textarea {
   font-weight: 500;
   display: block;
 }
-.quick-options small {
-  font-size: 12px;
-  color: var(--muted-foreground);
-  display: block;
-  margin-top: 5px;
-}
 .quick-options > button > svg {
   color: var(--accent-foreground);
 }
@@ -2106,9 +2039,11 @@ textarea {
   margin-bottom: 16px;
 }
 .script-workspace-heading h2 {
-  margin-top: 5px;
   font-size: 19px;
   letter-spacing: -0.4px;
+}
+.script-workspace-heading .eyebrow + h2 {
+  margin-top: 5px;
 }
 .script-text-link,
 .script-workspace-empty a {
@@ -2374,6 +2309,7 @@ textarea {
   font-size: 15px;
   line-height: 1.9;
   white-space: pre-wrap;
+  overflow-anchor: none;
 }
 .script-video-editor .script-manuscript-editor:focus-visible {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 24%, transparent);
@@ -3186,11 +3122,6 @@ textarea {
     margin-top: 0;
   }
   .script-blog-editor textarea {
-    height: min(68svh, 720px);
-    min-height: min(360px, 68svh);
-    max-height: none;
-    overflow-y: auto;
-    overscroll-behavior: contain;
     font-size: 16px;
   }
   .script-video-editor .script-manuscript-editor {
@@ -3342,10 +3273,10 @@ textarea {
   font: inherit;
 }
 .script-blog-editor textarea {
-  height: min(72vh, 850px);
   min-height: 380px;
-  overflow: auto;
-  resize: vertical;
+  overflow: hidden;
+  resize: none;
+  overflow-anchor: none;
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: 14px;
   line-height: 1.75;
@@ -3372,11 +3303,7 @@ textarea {
     min-height: 160px !important;
   }
   .script-blog-editor textarea {
-    height: min(68svh, 720px);
-    min-height: min(360px, 68svh);
-    max-height: none;
-    overscroll-behavior: contain;
-    font-size: 13px;
+    font-size: 16px;
   }
   .script-blog-source {
     margin-top: 4px;
@@ -3512,7 +3439,6 @@ textarea {
   --shadow: none;
 }
 .dark .nav-item.active,
-.dark .small-reminder,
 .dark .tabs,
 .dark .subscription-stats .monthly-stat,
 .dark .calendar-day.selected {
@@ -3540,7 +3466,7 @@ textarea {
 }
 @media (min-width: 1600px) {
   .main-content {
-    padding: 44px 56px 0;
+    padding: 44px 56px 32px;
   }
   .top-bar {
     padding: 0 56px;
@@ -3595,7 +3521,7 @@ textarea {
     margin-left: 190px;
   }
   .main-content {
-    padding: 30px 28px 0;
+    padding: 30px 28px 32px;
   }
   .top-bar {
     padding: 0 28px;
@@ -3672,16 +3598,13 @@ textarea {
     font-size: 26px;
     gap: 7px;
   }
-  .sidebar-caption {
-    font-size: 11px;
-  }
   .nav-item {
     font-size: 13px;
     gap: 9px;
     padding: 0 10px;
   }
   .main-content {
-    padding: 27px 23px 0;
+    padding: 27px 23px 32px;
   }
   .top-bar {
     padding: 0 23px;
@@ -3786,11 +3709,11 @@ textarea {
     margin-left: 0;
   }
   .main-content {
-    padding: 20px 22px 110px;
+    padding: 20px 22px calc(110px + env(safe-area-inset-bottom));
   }
   .top-bar {
-    height: 72px;
-    padding: 0 23px;
+    height: calc(72px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) max(23px, env(safe-area-inset-right)) 0 max(23px, env(safe-area-inset-left));
     border: 0;
   }
   .breadcrumb,
@@ -3959,11 +3882,6 @@ textarea {
   .priority {
     font-size: 11px;
   }
-  .card-footnote {
-    font-size: 11px;
-    padding-top: 15px;
-    line-height: 1.6;
-  }
   .goal-title h3 {
     font-size: 14px;
   }
@@ -4031,17 +3949,6 @@ textarea {
     font-size: 11px;
     line-height: 1.6;
   }
-  .page-footer {
-    margin-top: 9px;
-    padding: 23px 0 0;
-    font-size: 11px;
-  }
-  .page-footer > span:last-child {
-    display: none;
-  }
-  .page-footer > nav {
-    margin-left: auto;
-  }
   .mobile-nav {
     position: fixed;
     bottom: calc(16px + env(safe-area-inset-bottom));
@@ -4061,6 +3968,12 @@ textarea {
       0 5px 35px #27322020,
       0 1px 4px #2732200a;
     border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  }
+  .writing-shell .mobile-nav {
+    display: none;
+  }
+  .writing-shell .main-content {
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
   }
   .mobile-nav > a {
     flex: 1;
@@ -5000,9 +4913,6 @@ textarea {
 }
 .compact.subscription-grid {
   grid-auto-rows: 166px;
-}
-.card-footnote {
-  line-height: 1.6;
 }
 .task-name {
   overflow-wrap: anywhere;

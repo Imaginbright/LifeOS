@@ -15,9 +15,7 @@ export function CreatorPage() {
   return (
     <>
       <PageHeader
-        eyebrow="creative corner"
-        title="A growing community."
-        description="A little perspective on the people you reach."
+        title="Creator"
       />
       <div className="social-grid">
         {socialAccounts.map((account) => (

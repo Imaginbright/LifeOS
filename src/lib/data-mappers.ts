@@ -1,11 +1,15 @@
 import type { Database } from "@/lib/database.types";
-import type { AppData, ConnectedAccount, Goal, InboxItem, Platform, SocialAccount, SocialSnapshot, Subscription, Task, TaskRecurrence } from "@/lib/types";
+import type { AppData, ConnectedAccount, Goal, InboxItem, Platform, Preferences, SocialAccount, SocialSnapshot, Subscription, Task, TaskRecurrence } from "@/lib/types";
 import { previousSyncComparison, sortedHistory } from "@/lib/social-history";
 
 type Tables = Database["public"]["Tables"];
 type Row<T extends keyof Tables> = Tables[T]["Row"];
 
 const titleCase = (value: string) => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+
+export function mapPreferences(profile: Row<"profiles">, email?: string): Preferences {
+  return { appearance: profile.appearance as Preferences["appearance"], currency: profile.currency as Preferences["currency"], startOfWeek: profile.start_of_week as Preferences["startOfWeek"], notifications: profile.notifications, name: profile.display_name || email?.split("@")[0] || "You", email: profile.email ?? email, timezone: profile.timezone };
+}
 
 export function mapRecurrence(row: Row<"task_recurrences">): TaskRecurrence {
   return { id: row.id, frequency: row.frequency as TaskRecurrence["frequency"], interval: row.interval_count, weekdays: row.weekdays, dayOfMonth: row.day_of_month, startsOn: row.starts_on, endsOn: row.ends_on, active: row.active };

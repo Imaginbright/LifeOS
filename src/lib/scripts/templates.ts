@@ -105,6 +105,21 @@ export function serializeVideoScriptSections(sections: VideoScriptSection[]) {
   return JSON.stringify({ version: 2, format: "video-sections", sections });
 }
 
+export function editableScriptManuscript(raw: string | null) {
+  if (!raw) return "";
+  try {
+    const stored = JSON.parse(raw);
+    if (stored && typeof stored === "object" &&
+        ((stored.version === 2 && stored.format === "video-sections" && Array.isArray(stored.sections)) ||
+         (stored.version === 1 && Array.isArray(stored.structure) && stored.sections))) {
+      return videoScriptSectionsToMarkdown(videoScriptSectionsFromStoredContent(raw));
+    }
+  } catch {
+    // Manuscript text is kept exactly as written, including inline production cues.
+  }
+  return raw;
+}
+
 export function videoScriptSectionsToMarkdown(sections: VideoScriptSection[]) {
   return sections.map((section) => {
     const heading = section.isOpening ? "" : `## ${section.title.trim()}`;

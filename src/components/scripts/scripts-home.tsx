@@ -10,7 +10,6 @@ export function ScriptsHome() {
     <div className="scripts-home">
       <header className="page-header scripts-page-header">
         <div>
-          <p className="eyebrow">Script Haven</p>
           <h1>Scripts</h1>
           <p className="page-description">Choose what you’re making.</p>
         </div>

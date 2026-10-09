@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { isStaleScriptDraft, isStaleScriptTemplate } from "@/lib/scripts/templates";
 import type { ScriptDraft, ScriptType } from "@/lib/types";
 
@@ -23,7 +23,7 @@ export function canonicalTemplateId(userId: string) {
 
 export async function loadScriptMediumData(type: ScriptType) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCurrentUser();
   if (!user) return { templates: [] as ScriptTemplateSummary[], scripts: [] as ScriptDraft[] };
 
   const [templatesResult, scriptsResult] = await Promise.all([

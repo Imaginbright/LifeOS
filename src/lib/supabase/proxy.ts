@@ -6,6 +6,7 @@ import { publicEnv } from "@/lib/env";
 const PUBLIC_PATHS = new Set(["/", "/login", "/privacy", "/terms"]);
 
 export async function updateSession(request: NextRequest) {
+  if (request.nextUrl.pathname === "/api/cron/social-sync") return NextResponse.next({ request });
   let response = NextResponse.next({ request });
   const env = publicEnv();
   const supabase = createServerClient<Database>(env.supabaseUrl, env.supabasePublishableKey, {
@@ -19,7 +20,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
+  const user = !error && data?.claims?.sub;
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.has(path) || path.startsWith("/auth/callback/");
   const isCron = path === "/api/cron/social-sync";
@@ -28,14 +30,18 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", `${path}${request.nextUrl.search}`);
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
   }
 
   if (user && path === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
   }
 
   return response;

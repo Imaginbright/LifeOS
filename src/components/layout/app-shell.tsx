@@ -14,13 +14,12 @@ import {
   Bell,
   ChevronDown,
   Leaf,
-  Sun,
   ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/components/shared/app-provider";
 import { QuickAdd } from "@/components/shared/quick-add";
-import { PublicSiteShell } from "@/components/layout/public-site-shell";
+import { DashboardSkeleton } from "@/components/shared/skeletons";
 import type { ReactNode } from "react";
 const navigation = [
   { href: "/dashboard", label: "Dashboard", mobile: "Home", icon: LayoutGrid },
@@ -38,13 +37,13 @@ const navigation = [
 ];
 export function AppShell({
   children,
-  signedIn,
 }: {
   children: ReactNode;
-  signedIn: boolean;
 }) {
   const path = usePathname();
   const scriptsPath = path === "/scripts" || path.startsWith("/scripts/");
+  const writingPath = /^\/scripts\/[0-9a-f-]{36}$/i.test(path) ||
+    (scriptsPath && (path.endsWith("/edit") || path.endsWith("/new")));
   const scriptPage =
     path === "/scripts"
       ? "Scripts"
@@ -63,22 +62,12 @@ export function AppShell({
     clearError,
     refresh,
     loading,
+    ready,
   } = useApp();
   const unread = inbox.filter((item) => !item.read).length;
-  if (path === "/" || path === "/privacy" || path === "/terms") {
-    return (
-      <PublicSiteShell
-        landingAction={
-          path === "/" ? (signedIn ? "dashboard" : "login") : undefined
-        }
-      >
-        {children}
-      </PublicSiteShell>
-    );
-  }
   if (path === "/login") return <>{children}</>;
   return (
-    <div className="app-shell">
+    <div className={cn("app-shell", writingPath && "writing-shell")}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -89,7 +78,6 @@ export function AppShell({
           </span>
           LifeOS<span className="wordmark-dot">.</span>
         </Link>
-        <p className="sidebar-caption">A little more intentional.</p>
         <div className="nav-label">Overview</div>
         <nav aria-label="Main navigation">
           {navigation.map((item) => (
@@ -117,19 +105,10 @@ export function AppShell({
           Settings
         </Link>
         <div className="sidebar-bottom">
-          <div className="small-reminder">
-            <Sun size={21} strokeWidth={1.3} />
-            <p>
-              Small steps.
-              <br />A life well lived.
-            </p>
-            <span>A space for things that actually matter.</span>
-          </div>
           <Link href="/settings" className="profile">
             <span className="avatar">{preferences.name.charAt(0)}</span>
             <span>
               <strong>{preferences.name}</strong>
-              <small>Your personal space</small>
             </span>
             <ChevronDown size={15} />
           </Link>
@@ -194,23 +173,11 @@ export function AppShell({
               </button>
             </div>
           )}
-          {loading && (
-            <div className="loading-line" role="status">
-              Loading your space…
-            </div>
-          )}
-          {children}
-          <footer className="page-footer">
-            <span>Life, a little more in focus.</span>
-            <nav aria-label="Legal links">
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/terms">Terms</Link>
-            </nav>
-            <span>
-              LifeOS <span className="footer-dot">·</span> Made for your
-              everyday
-            </span>
-          </footer>
+          {!ready && !scriptsPath ? (
+            error ? <div className="card"><p>Your space could not be loaded. Try again above.</p></div> :
+              <div aria-busy="true" aria-label="Loading your space"><DashboardSkeleton /></div>
+          ) : children}
+          {loading && ready && <span className="sr-only" role="status">Updating your space…</span>}
         </main>
       </div>
       <nav className="mobile-nav" aria-label="Mobile navigation">

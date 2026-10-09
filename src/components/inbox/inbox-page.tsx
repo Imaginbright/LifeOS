@@ -11,9 +11,8 @@ export function InboxPage() {
   return (
     <>
       <PageHeader
-        eyebrow="On your radar"
-        title="A little heads-up."
-        description={`${unread} unread ${unread === 1 ? "notification" : "notifications"}. Just the things worth your attention.`}
+        title="Inbox"
+        description={`${unread} unread ${unread === 1 ? "notification" : "notifications"}.`}
         action={
           <button
             className="button secondary"

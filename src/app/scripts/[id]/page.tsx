@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ScriptEditor } from "@/components/scripts/script-editor";
 import { isStaleScriptDraft } from "@/lib/scripts/templates";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import type { ScriptType } from "@/lib/types";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -10,7 +10,7 @@ type PageProps = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCurrentUser();
   if (!user) return { title: "Script" };
   const { data } = await supabase.from("scripts").select("title").eq("id", id).eq("user_id", user.id).maybeSingle();
   return { title: data?.title ?? "Script" };
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ScriptPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCurrentUser();
   if (!user) notFound();
   const { data, error } = await supabase
     .from("scripts")

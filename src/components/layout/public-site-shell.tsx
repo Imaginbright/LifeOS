@@ -47,7 +47,6 @@ export function PublicSiteShell({ children, landingAction }: { children: ReactNo
           <Link href="/" className="public-footer-brand">
             LifeOS.
           </Link>
-          <p>A personal space for a more intentional everyday.</p>
         </div>
         <nav aria-label="Footer navigation">
           <Link href="/">Back to LifeOS</Link>

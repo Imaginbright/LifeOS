@@ -3,7 +3,7 @@ import { ArrowUpRight, CheckCheck, CreditCard, Flag, ChartNoAxesCombined } from 
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "A little more intentional",
+  title: { absolute: "LifeOS" },
   description: "LifeOS brings personal planning, subscriptions, and creator growth into one calm workspace.",
 };
 
@@ -29,14 +29,12 @@ export default async function HomePage() {
   return (
     <div className="landing-page">
       <section className="landing-hero" aria-labelledby="landing-title">
-        <p className="eyebrow">Your personal space</p>
-        <h1 id="landing-title">Life, a little more intentional.</h1>
+        <h1 id="landing-title">LifeOS</h1>
         <p className="landing-lead">A personal dashboard for your day, goals, subscriptions and creator growth.</p>
-        <p className="landing-support">Bring personal planning and creator statistics into one calm workspace, with room to focus on what matters to you.</p>
         <Link href={href} className="button primary landing-cta">{label}<ArrowUpRight size={17} /></Link>
       </section>
       <section className="landing-features" aria-labelledby="landing-features-title">
-        <div className="landing-section-heading"><p className="eyebrow">What you can keep in view</p><h2 id="landing-features-title">A place for the everyday.</h2></div>
+        <div className="landing-section-heading"><h2 id="landing-features-title">Features</h2></div>
         <div className="landing-feature-grid">
           {features.map(({ title, description, icon: Icon }) => (
             <article className="card landing-feature" key={title}>

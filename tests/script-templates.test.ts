@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { isStaleScriptDraft, isStaleScriptTemplate, scriptManuscriptFromStoredContent, videoScriptSectionsFromMarkdown, videoScriptSectionsFromStoredContent, videoScriptSectionsToMarkdown } from "../src/lib/scripts/templates";
+import { editableScriptManuscript, isStaleScriptDraft, isStaleScriptTemplate, scriptManuscriptFromStoredContent, videoScriptSectionsFromMarkdown, videoScriptSectionsFromStoredContent, videoScriptSectionsToMarkdown } from "../src/lib/scripts/templates";
 
 const foundationSql = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261001090000_scripts_foundation.sql", import.meta.url)), "utf8");
 const templatesSql = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261001130000_script_templates.sql", import.meta.url)), "utf8");
@@ -48,6 +48,15 @@ test("video drafts present stored sections as one continuous editable manuscript
   assert.deepEqual(sections[0].visuals, ["[OPEN — CAMERA]"]);
   assert.equal(sections[0].body, "A complete opening.");
   assert.equal(sections[1].body, "A clear conclusion.");
+  assert.equal(editableScriptManuscript(stored), manuscript);
+});
+
+test("reopening a plain manuscript preserves exact text, cue positions, formatting, and whitespace", () => {
+  const manuscript = "# Hook\n\nFirst line.\n\n[SHOW DETAIL]\n\n**Keep this emphasis.**\n\nLast line.\n";
+  assert.equal(editableScriptManuscript(manuscript), manuscript);
+  assert.equal(editableScriptManuscript("No heading.\n\nA second thought."), "No heading.\n\nA second thought.");
+  assert.equal(editableScriptManuscript(""), "");
+  assert.equal(editableScriptManuscript(null), "");
 });
 
 test("known temporary Playwright template and draft fixtures are kept out of the workspace", () => {

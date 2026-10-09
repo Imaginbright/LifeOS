@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { mountWorkspace } from "./workspace-fixture";
 
-test("public pages render responsively without horizontal overflow", async ({ page }) => {
+test("sign in renders responsively without horizontal overflow", async ({ page }) => {
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   for (const width of [1440, 768, 390, 360]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const route of ["/", "/login", "/privacy", "/terms"]) {
+    for (const route of ["/login"]) {
       const response = await page.goto(route); expect(response?.status(), `${route} at ${width}px`).toBe(200);
       await expect(page.locator("h1")).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), `${route} overflows at ${width}px`).toBe(false);
@@ -54,14 +55,14 @@ test("YouTube, Shorts, and Blog can each start and save a draft without a templa
       const scriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
       if (scriptId) created.push(scriptId);
       await expect(page.getByLabel("Script title")).toHaveValue(`Untitled ${medium.name} script`);
-      const editor = page.getByLabel(medium.editor);
+      const editor = page.getByLabel(medium.editor, { exact: true });
       await expect(editor).toHaveValue("");
 
       const saved = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
       await editor.fill(medium.sample);
       await saved;
       await page.reload();
-      await expect(page.getByLabel(medium.editor)).toHaveValue(medium.sample);
+      await expect(page.getByLabel(medium.editor, { exact: true })).toHaveValue(medium.sample);
     }
   } finally {
     for (const id of created.reverse()) {
@@ -100,7 +101,7 @@ test("a pasted template opens as a manuscript, can be edited, and seeds its full
   await page.getByRole("button", { name: "Start script" }).click();
   await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
   await expect(page.locator(".script-section-editor")).toHaveCount(0);
-  const manuscript = page.getByLabel("Script manuscript");
+  const manuscript = page.getByLabel("Script manuscript", { exact: true });
   await expect(manuscript).toHaveValue(/## Hook[\s\S]*Edited A complete sample narration\.[\s\S]*## The catch/);
   const edited = (await manuscript.inputValue()).replace("Edited A complete sample narration.", "Edited and rewritten sample narration.");
   const saved = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
@@ -109,7 +110,7 @@ test("a pasted template opens as a manuscript, can be edited, and seeds its full
   await saved;
   await page.reload();
   await expect(page.getByLabel("Script title")).toHaveValue("Playwright Shorts draft");
-  await expect(page.getByLabel("Script manuscript")).toHaveValue(edited);
+  await expect(page.getByLabel("Script manuscript", { exact: true })).toHaveValue(edited);
 });
 
 test("YouTube scripts edit as one manuscript and Blog keeps raw MDX through edit, save, reload, and copy", async ({ page }) => {
@@ -142,7 +143,7 @@ test("YouTube scripts edit as one manuscript and Blog keeps raw MDX through edit
     await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
     const youtubeScriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
     if (youtubeScriptId) created.push({ kind: "script", id: youtubeScriptId });
-    const youtubeManuscript = page.getByLabel("Script manuscript");
+    const youtubeManuscript = page.getByLabel("Script manuscript", { exact: true });
     await expect(youtubeManuscript).toHaveValue(/## Hook[\s\S]*\[OPEN — CAMERA\][\s\S]*An opening line\.[\s\S]*## Verdict/);
     await expect(page.locator(".script-section-editor")).toHaveCount(0);
     const youtubeSave = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
@@ -150,12 +151,12 @@ test("YouTube scripts edit as one manuscript and Blog keeps raw MDX through edit
     await youtubeManuscript.fill(editedYoutubeManuscript);
     await youtubeSave;
     await page.reload();
-    await expect(page.getByLabel("Script manuscript")).toHaveValue(editedYoutubeManuscript);
+    await expect(page.getByLabel("Script manuscript", { exact: true })).toHaveValue(editedYoutubeManuscript);
 
     const mdx = "# Hardware notes\n\n## Display\n\n<Component mode={{ exact: true }} />\n\n```tsx\nexport default () => <p>Keep this MDX.</p>;\n```";
     await page.goto("/scripts/blog/templates/new");
     await page.getByLabel("Template name").fill(`Blog MDX ${stamp}`);
-    await page.getByLabel("MDX source").fill(mdx);
+    await page.getByLabel("MDX source", { exact: true }).fill(mdx);
     await expect(page.locator(".script-template-parse-preview")).toHaveCount(0);
     await page.getByRole("button", { name: "Save template" }).click();
     await expect(page).toHaveURL(/\/scripts\/blog\/templates\/[0-9a-f-]{36}$/);
@@ -164,9 +165,9 @@ test("YouTube scripts edit as one manuscript and Blog keeps raw MDX through edit
     await expect(page.locator(".script-blog-source code")).toHaveText(mdx);
     await expect(page.locator(".script-document-outline")).toHaveCount(0);
     await page.getByRole("link", { name: "Edit template" }).click();
-    await expect(page.getByLabel("MDX source")).toHaveValue(mdx);
+    await expect(page.getByLabel("MDX source", { exact: true })).toHaveValue(mdx);
     const editedMdx = mdx + "\n\n## Notes\n\n{featured ? <strong>Yes</strong> : null}";
-    await page.getByLabel("MDX source").fill(editedMdx);
+    await page.getByLabel("MDX source", { exact: true }).fill(editedMdx);
     await page.getByRole("button", { name: "Save template" }).click();
     await expect(page.locator(".script-blog-source code")).toHaveText(editedMdx);
 
@@ -174,7 +175,7 @@ test("YouTube scripts edit as one manuscript and Blog keeps raw MDX through edit
     await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
     const blogScriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
     if (blogScriptId) created.push({ kind: "script", id: blogScriptId });
-    await expect(page.getByLabel("MDX source")).toHaveValue(editedMdx);
+    await expect(page.getByLabel("MDX source", { exact: true })).toHaveValue(editedMdx);
     await expect(page.locator(".script-section-editor")).toHaveCount(0);
     await expect(page.locator(".script-document-outline")).toHaveCount(0);
     await page.getByRole("button", { name: /Actions for/ }).click();
@@ -184,10 +185,10 @@ test("YouTube scripts edit as one manuscript and Blog keeps raw MDX through edit
 
     const editedScriptMdx = editedMdx.replace("Keep this MDX.", "The raw source still edits.");
     const blogSave = page.waitForResponse((response) => response.url().includes("/api/scripts/") && response.request().method() === "PATCH" && response.ok());
-    await page.getByLabel("MDX source").fill(editedScriptMdx);
+    await page.getByLabel("MDX source", { exact: true }).fill(editedScriptMdx);
     await blogSave;
     await page.reload();
-    await expect(page.getByLabel("MDX source")).toHaveValue(editedScriptMdx);
+    await expect(page.getByLabel("MDX source", { exact: true })).toHaveValue(editedScriptMdx);
   } finally {
     for (const resource of created.reverse()) {
       const path = resource.kind === "script" ? "scripts" : "script-templates";
@@ -238,7 +239,7 @@ test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templ
     await expect(page).toHaveURL(/\/scripts\/[0-9a-f-]{36}$/);
     scriptId = page.url().match(/[0-9a-f-]{36}$/)?.[0];
     await page.getByLabel("Script title").fill(scriptTitle);
-    const manuscript = page.getByLabel("Script manuscript");
+    const manuscript = page.getByLabel("Script manuscript", { exact: true });
     const original = await manuscript.inputValue();
     await manuscript.focus();
     const before = await page.evaluate(() => ({
@@ -285,7 +286,7 @@ test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templ
     await expect(page.locator(".script-template-list").getByText(templateName)).toHaveCount(0);
 
     await page.goto("/scripts/" + scriptId);
-    await expect(page.getByLabel("Script manuscript")).toHaveValue(/Mobile writing remains here\./);
+    await expect(page.getByLabel("Script manuscript", { exact: true })).toHaveValue(/Mobile writing remains here\./);
     await page.getByRole("button", { name: "Actions for " + scriptTitle }).click();
     await page.getByRole("menuitem", { name: "Delete script" }).click();
     await expect(page.getByRole("heading", { name: "Delete script?" })).toBeVisible();
@@ -301,28 +302,34 @@ test("saved scripts copy cleanly, mobile editing stays stable, and scripts/templ
   }
 });
 
-test("public landing page explains LifeOS and links to sign in and legal pages", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Life, a little more intentional." })).toBeVisible();
-  for (const heading of ["Tasks", "Goals", "Subscriptions", "Creator"]) await expect(page.getByRole("heading", { name: heading })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Legal navigation" }).getByRole("link", { name: "Privacy" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Legal navigation" }).getByRole("link", { name: "Terms" })).toBeVisible();
-  await page.getByRole("link", { name: "Sign in" }).first().click();
-  await expect(page).toHaveURL(/\/login$/);
+test("home and paused public pages lead into the private app", async ({ page }) => {
+  for (const route of ["/", "/privacy", "/terms"]) {
+    await page.goto(route);
+    await expect(page).toHaveURL(/\/login\?next=%2Fdashboard$/);
+    await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
+  }
+  await expect(page.getByRole("navigation", { name: "Legal links" })).toHaveCount(0);
 });
 
-test("legal pages expose the support address and appearance control", async ({ page }) => {
-  for (const route of ["/privacy", "/terms"]) {
-    await page.goto(route);
-    await expect(page.getByRole("link", { name: "brightified2004@gmail.com", exact: true })).toHaveAttribute("href", "mailto:brightified2004@gmail.com");
-    await expect(page.locator(".sidebar")).not.toBeVisible();
+test("home-screen metadata and icons are available without signing in", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.locator('meta[name="apple-mobile-web-app-capable"]')).toHaveAttribute("content", "yes");
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", "/apple-touch-icon.png");
+  const response = await page.request.get("/manifest.webmanifest");
+  expect(response.status()).toBe(200);
+  const manifest = await response.json();
+  expect(manifest.display).toBe("standalone");
+  expect(manifest.start_url).toBe("/dashboard");
+  expect(manifest.scope).toBe("/");
+  for (const icon of ["/apple-touch-icon.png", ...manifest.icons.map((icon: { src: string }) => icon.src)]) {
+    const image = await page.request.get(icon);
+    expect(image.status()).toBe(200);
+    expect(image.headers()["content-type"]).toContain("image/png");
   }
-  await page.getByRole("button", { name: "Use dark appearance" }).click();
-  await expect(page.locator("html")).toHaveClass(/dark/);
 });
 
 test("appearance changes once per click and persists across reloads and routes", async ({ page }) => {
-  await page.goto("/terms");
+  await mountWorkspace(page, { screen: "appearance", path: "/scripts" });
   await page.evaluate(() => localStorage.setItem("lifeos-theme", "light"));
   await page.reload();
 
@@ -344,7 +351,7 @@ test("appearance changes once per click and persists across reloads and routes",
   await expect(root).toHaveClass(/dark/);
   await expect(page.getByRole("button", { name: "Use light appearance" })).toBeVisible();
 
-  await page.goto("/privacy");
+  await mountWorkspace(page, { screen: "appearance", path: "/scripts" });
   await expect(root).toHaveClass(/dark/);
   await page.getByRole("button", { name: "Use light appearance" }).click();
   await expect(root).toHaveClass(/light/);
@@ -358,7 +365,7 @@ test("appearance changes once per click and persists across reloads and routes",
 
 test("system appearance resolves to the device theme without desynchronizing the toggle", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.goto("/terms");
+  await mountWorkspace(page, { screen: "appearance", path: "/scripts" });
   await page.evaluate(() => localStorage.setItem("lifeos-theme", "system"));
   await page.reload();
 
@@ -531,7 +538,7 @@ test("authenticated task and goal edits and deletions persist", async ({ page })
   await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Open dashboard" }).first()).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/dashboard");
   const stamp = Date.now();
   const taskTitle = `Edit test task ${stamp}`;

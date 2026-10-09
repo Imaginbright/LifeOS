@@ -11,15 +11,12 @@ export function GoalsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Next Big Thing"
-        title="Good things take intention."
-        description="It does get easier."
+        title="Goals"
         action={
           <AddButton onClick={() => setAddKind("goal")}>Add goal</AddButton>
         }
       />
       <div className="goals-page-label">
-        <span className="eyebrow">What you’re working toward</span>
         <span>{goals.length} goals</span>
       </div>
       {goals.length ? (
@@ -31,7 +28,6 @@ export function GoalsPage() {
       ) : (
         <EmptyState
           title="No goals yet."
-          description="Start with something that matters to you."
           action={
             <AddButton onClick={() => setAddKind("goal")}>Add goal</AddButton>
           }

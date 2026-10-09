@@ -2,10 +2,11 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import type { Database } from "@/lib/database.types";
 import { publicEnv } from "@/lib/env";
 
-export async function createClient() {
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
   const env = publicEnv();
 
@@ -21,5 +22,10 @@ export async function createClient() {
       },
     },
   });
-}
+});
+
+export const getCurrentUser = cache(async () => {
+  const supabase = await createClient();
+  return supabase.auth.getUser();
+});
 

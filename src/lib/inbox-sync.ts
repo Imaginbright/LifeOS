@@ -50,10 +50,13 @@ export async function syncInboxForUser(userId: string, now = new Date()) {
     if (days >= 0 && days <= 7) generated.push({ user_id: userId, source_key: renewalEventKey(row.id, renewal), category: "Subscription", title: `${row.name} renews ${days === 0 ? "today" : `in ${days} days`}`, description: `${row.currency} ${Number(row.amount).toLocaleString()} is due on ${renewal}.`, event_at: now.toISOString(), action_label: "View subscription", href: "/subscriptions", metadata: { subscriptionId: row.id, renewalDate: renewal }, resolved_at: null });
   }
 
-  for (const account of accounts ?? []) {
+  const accountHistories = await Promise.all((accounts ?? []).map((account) =>
+    admin.from("social_snapshots").select("followers,captured_at").eq("connected_account_id", account.id).not("followers", "is", null).order("captured_at", { ascending: false }).limit(2)
+  ));
+  for (const [index, account] of (accounts ?? []).entries()) {
     if (["error", "token_expired"].includes(account.status)) generated.push({ user_id: userId, source_key: `lifeos:social-error:${account.id}:${account.updated_at.slice(0, 10)}`, category: "System", title: `${account.platform} needs attention`, description: account.last_error || "Reconnect this account to resume updates.", event_at: now.toISOString(), action_label: "Open settings", href: "/settings", metadata: { accountId: account.id }, resolved_at: null });
 
-    const { data: history } = await admin.from("social_snapshots").select("followers,captured_at").eq("connected_account_id", account.id).not("followers", "is", null).order("captured_at", { ascending: false }).limit(2);
+    const history = accountHistories[index].data;
     if (history?.length === 2) {
       for (const milestone of crossedFollowerMilestones(Number(history[1].followers), Number(history[0].followers))) {
         generated.push({ user_id: userId, source_key: `lifeos:creator-milestone:${account.id}:${milestone}`, category: "Creator", title: `${milestone.toLocaleString()} on ${account.platform}`, description: `Your audience reached a new follower milestone.`, event_at: history[0].captured_at, action_label: "View growth", href: "/creator", metadata: { accountId: account.id, milestone }, resolved_at: null });

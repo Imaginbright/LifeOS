@@ -27,7 +27,7 @@ export async function ScriptMediumPage({ type }: { type: ScriptType }) {
 
       <section className="script-workspace-section" id="templates" aria-labelledby="script-templates-heading">
         <div className="script-workspace-heading">
-          <div><p className="eyebrow">Start here</p><h2 id="script-templates-heading">Templates</h2></div>
+          <div><h2 id="script-templates-heading">Templates</h2></div>
           <Link href={createHref} className="script-text-link">Add a template</Link>
         </div>
         {templates.length ? (
@@ -51,7 +51,7 @@ export async function ScriptMediumPage({ type }: { type: ScriptType }) {
 
       <section className="script-workspace-section script-my-scripts" aria-labelledby="my-scripts-heading">
         <div className="script-workspace-heading">
-          <div><p className="eyebrow">Your work</p><h2 id="my-scripts-heading">My Scripts</h2></div>
+          <div><h2 id="my-scripts-heading">My Scripts</h2></div>
         </div>
         {scripts.length ? (
           <ul className="script-draft-list">
